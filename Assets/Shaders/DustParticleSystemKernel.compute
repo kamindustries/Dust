@@ -1,0 +1,126 @@
+#pragma kernel DustParticleSystemKernel
+
+#include "DustParticleSystemCommon.cginc"
+#include "NoiseSimplex.cginc"
+
+//We define the size of a group in the x and y directions, z direction will just be one
+#define thread_group_size_x 16
+#define thread_group_size_y 16
+
+
+//We keep three buffers accessed by the kernel, a constant buffer that is the same for every computation,
+//an offset buffer with a value to offset the wave, and an output buffer that is written to by the kernel
+Texture2D<float4> _colorByLife;
+Texture2D<float4> _colorByVelocity;
+RWStructuredBuffer<ParticleStruct> output;
+
+SamplerState sampler_colorByLife;
+
+float dt;
+float3 origin;
+float2 massNew;
+float2 momentumNew;
+float2 lifespanNew;
+
+float inheritVelocityMult;
+float3 initialVelocityDir;
+float3 gravityIn;
+float gravityModifier;
+
+int emission;
+float3 emissionSize;
+float initialSpeed;
+float scatterSphereVolume;
+
+float4 startColor;
+float velocityColorRange;
+float3 noiseAmplitude;
+float3 noiseScale;
+float3 noiseOffset;
+
+
+const float cellSize = 1.25;
+
+
+
+//The kernel for this compute shader, each thread group contains a number of threads specified by numthreads(x,y,z)
+//We lookup the the index into the flat array by using x + y * x_stride
+//The position is calculated from the thread index and then the z component is shifted by the Wave function
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
+{
+	int idx = id.x + id.y * thread_group_size_x * 32;
+
+	float3 pos = output[idx].pos;
+	float3 vel = output[idx].vel;
+	float4 cd = output[idx].cd;
+	float age = output[idx].age;
+	float mass = output[idx].mass;
+	float momentum = output[idx].momentum;
+
+	// Randomness
+	float r1 = rand(float2(id.x+.1, id.y));
+	float r2 = rand(float2(id.x+.2, id.y));
+	float r3 = rand(float2(id.x+.3, id.y));
+	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterSphereVolume);
+
+	// Noise
+	float3 noiseCoord = (pos * noiseScale) + noiseOffset;
+	// float3 noiseCoord = trunc(pos);
+	// float3 noiseCoord = (trunc(pos*1000.)/1000. * noiseScale) + noiseOffset;
+	float3 simplexNoise = float3(snoise(noiseCoord), snoise(noiseCoord + 17.0), snoise(noiseCoord + 43.0));
+	simplexNoise *= noiseAmplitude;
+	
+	// Gravity
+	float3 gravity = gravityIn * gravityModifier;
+
+	// Velocity
+	float3 velIn = simplexNoise + gravity;
+	vel = velIn * (mass * dt) + vel * momentum;
+	pos += vel;
+	
+	// Color
+	float speed = length(vel);
+	float2 coord = float2(fit(age, 0., output[idx].lifespan, 1., 0.), 0.5);
+	float4 cdLife = _colorByLife.SampleLevel(sampler_colorByLife, coord, 0.0);
+	coord = float2(fit(clamp(speed, 0., velocityColorRange), 0., velocityColorRange, 0., 1.), 0.5);
+	float4 cdVel = _colorByVelocity.SampleLevel(sampler_colorByLife, coord, 0.0);
+	cd = startColor * cdLife * cdVel;
+
+	// Age
+	age -= dt;
+
+	// Spawn new particles
+	if (age <= 0.0) {
+		// Simple emission control
+		if (idx < emission) {
+
+			pos = origin.xyz + (randSphere * emissionSize);
+			
+			vel = (randSphere * initialSpeed);
+			vel += (initialVelocityDir * inheritVelocityMult);
+
+			cd = startColor * _colorByLife[uint2(0,0)] * _colorByVelocity[uint2(0,0)];
+
+			float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
+			age = newLifespan;
+
+			output[idx].lifespan = newLifespan;
+			output[idx].mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
+			output[idx].momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
+		}
+		else {
+			pos = randSphere + 1000000;
+			vel = float3(0,0,0);
+			cd = float4(0,0,0,0);
+			age = 0.0;
+		}
+
+	}
+
+	output[idx].pos = pos;
+	output[idx].vel = vel;
+	output[idx].cd = cd;
+	output[idx].age = age;
+
+}

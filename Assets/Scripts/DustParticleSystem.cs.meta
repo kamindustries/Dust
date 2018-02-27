@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 1b689a2c4571cf643ad0e2c28484c454
+timeCreated: 1519675773
+licenseType: Free
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - ParticleSystemKernel: {fileID: 7200000, guid: ca8315c68740d4c4b9b9a1f6f842c888,
+      type: 3}
+  - ParticleMaterial: {fileID: 2100000, guid: 9662d9bed78433e42900e661228e2850, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
