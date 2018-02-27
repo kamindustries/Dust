@@ -1,5 +1,10 @@
 #define PI 3.14159265359
 
+// --------------------------------------------------
+// Structures
+// --------------------------------------------------
+
+// Particle system buffer
 struct ParticleStruct
 {
     float3 pos;
@@ -10,6 +15,11 @@ struct ParticleStruct
     float mass;
     float momentum;
 };
+
+
+// --------------------------------------------------
+// Functions 
+// --------------------------------------------------
 
 float rand(float2 co)
 {

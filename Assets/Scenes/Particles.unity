@@ -393,38 +393,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ParticleSystemKernel: {fileID: 7200000, guid: ca8315c68740d4c4b9b9a1f6f842c888,
     type: 3}
-  ParticleMaterial: {fileID: 2100000, guid: 9662d9bed78433e42900e661228e2850, type: 2}
+  ParticleMaterial: {fileID: 2100000, guid: 235a5501a8d25464fa9a91f635dfa448, type: 2}
   Mass: {x: 0.5, y: 0.5}
   Momentum: {x: 0.95, y: 0.95}
-  Lifespan: {x: 5, y: 5}
+  Lifespan: {x: 0.5, y: 2}
   PreWarmFrames: 0
-  InheritVelocity: 0
-  EmitterVelocity: 0
+  InheritVelocity: 0.4
+  EmitterVelocity: 1
   GravityModifier: 0
-  Emission: 65000
-  EmissionSize: {x: 0, y: 0, z: 0}
+  Emission: 1048576
+  EmissionSize: {x: 0.5, y: 0.5, z: 0.5}
   InitialSpeed: 0
-  ScatterSphereVolume: 0
+  ScatterSphereVolume: 1
   StartColor: {r: 1, g: 1, b: 1, a: 1}
   ColorByLife:
     Gradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
-      key2: {r: 0, g: 0, b: 0, a: 0}
-      key3: {r: 0, g: 0, b: 0, a: 0}
-      key4: {r: 0, g: 0, b: 0, a: 0}
-      key5: {r: 0, g: 0, b: 0, a: 0}
-      key6: {r: 0, g: 0, b: 0, a: 0}
-      key7: {r: 0, g: 0, b: 0, a: 0}
+      key0: {r: 0.112068966, g: 0.022491349, b: 0.19117647, a: 1}
+      key1: {r: 0.2597141, g: 0.036224052, b: 0.49264705, a: 1}
+      key2: {r: 0.4895716, g: 0.116781995, b: 0.5294118, a: 0}
+      key3: {r: 0.6838235, g: 0.075421706, b: 0.39011237, a: 0}
+      key4: {r: 0.85294116, g: 0.23205018, b: 0.2448961, a: 0}
+      key5: {r: 0.9632353, g: 0.5194242, b: 0.41787413, a: 0}
+      key6: {r: 0.9852941, g: 0.7911332, b: 0.49989188, a: 0}
+      key7: {r: 1, g: 0.97068965, b: 0.875, a: 0}
       ctime0: 0
-      ctime1: 65535
-      ctime2: 0
-      ctime3: 0
-      ctime4: 0
-      ctime5: 0
-      ctime6: 0
-      ctime7: 0
+      ctime1: 7325
+      ctime2: 17348
+      ctime3: 27563
+      ctime4: 39321
+      ctime5: 51464
+      ctime6: 60138
+      ctime7: 65535
       atime0: 0
       atime1: 65535
       atime2: 0
@@ -434,7 +434,7 @@ MonoBehaviour:
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_NumColorKeys: 2
+      m_NumColorKeys: 8
       m_NumAlphaKeys: 2
   ColorByVelocity:
     Gradient:
@@ -468,7 +468,7 @@ MonoBehaviour:
       m_NumAlphaKeys: 2
     Range: 1
   NoiseAmplitude: {x: 1, y: 1, z: 1}
-  NoiseScale: {x: 1, y: 1, z: 1}
+  NoiseScale: {x: 0.5, y: 0.5, z: 0.5}
   NoiseOffset: {x: 0, y: 0, z: 0}
   TestGradient:
     serializedVersion: 2
@@ -505,8 +505,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1282248675}
-  m_LocalRotation: {x: -0.26184556, y: -0.30908582, z: 0.24916358, w: 0.8796706}
-  m_LocalPosition: {x: 0, y: 7.73, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -4077,7 +4077,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1825567955}
   m_LocalRotation: {x: -0, y: -0.2935321, z: -0, w: 0.95594925}
-  m_LocalPosition: {x: 15.37, y: 10.68, z: -9.3}
+  m_LocalPosition: {x: 16.76, y: 5.8, z: -22.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

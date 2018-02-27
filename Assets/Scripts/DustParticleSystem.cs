@@ -91,6 +91,7 @@ namespace Dust
         void Update() 
         {
             ParticleMaterial.SetBuffer("dataBuffer", particlesBuffer);
+            ParticleMaterial.SetVector("xform", transform.position);
             ParticleMaterial.SetPass(0);
             Graphics.DrawMesh(particlesMesh, Matrix4x4.identity, ParticleMaterial, 0, null, 0, null, true, true);
         }
@@ -170,7 +171,7 @@ namespace Dust
 
             // Initialize
             for (int i = 0; i < VertCount; i++) {
-                meshVerts[i] = new Vector3(Random.value, Random.value, Random.value);
+                meshVerts[i] = new Vector3(Random.value * 50f, Random.value * 50f, Random.value * 50f);
                 meshIndices[i] = i;
                 for (int j = 0; j < NumElements; j++) {
                     particlesTemp[(i*NumElements)+j] = 0f;
@@ -185,6 +186,7 @@ namespace Dust
             particlesMesh.vertices = meshVerts;
             particlesMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
             particlesMesh.RecalculateBounds();
+            Debug.Log(particlesMesh.bounds);
             MeshFilter mf = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             mf.hideFlags = HideFlags.HideInInspector;
             mf.mesh = particlesMesh;

@@ -1,4 +1,4 @@
-Shader "DX11/Dust/Pointcloud_Simple"
+Shader "Dust/Pointcloud_Simple"
 {
 	SubShader
 	{
