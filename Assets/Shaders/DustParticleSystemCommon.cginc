@@ -16,6 +16,13 @@ struct ParticleStruct
     float momentum;
 };
 
+struct MeshStruct
+{
+    float3 pos;
+    float3 normal;
+    float3 cd;
+};
+
 
 // --------------------------------------------------
 // Functions 

@@ -45,7 +45,8 @@ Shader "Dust/Pointcloud"
 
 				// lighting
 				o.uv = v.texcoord;
-                half3 worldNormal = UnityObjectToWorldNormal(half3(0,1,0)); //arbitrary normal for points
+                // half3 worldNormal = UnityObjectToWorldNormal(half3(0,1,0)); //arbitrary normal for points
+                half3 worldNormal = half3(0,1,0); //arbitrary normal for points
                 half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
                 o.diff = nl * _LightColor0.rgb;
                 o.ambient = ShadeSH9(half4(worldNormal,1));

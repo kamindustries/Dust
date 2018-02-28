@@ -24,10 +24,13 @@ namespace Dust {
         SerializedProperty GravityModifier;
 
 		// Shape
+		string[] _shape = new string[] {"Sphere", "Mesh Renderer"};
+		int _shapeIdx = 0;
         SerializedProperty Emission;
-        SerializedProperty EmissionSize;
         SerializedProperty InitialSpeed;
-		SerializedProperty ScatterSphereVolume;
+        SerializedProperty EmissionSize;
+		SerializedProperty ScatterVolume;
+        SerializedProperty EmissionMeshRenderer;
 
 		// Color
         SerializedProperty StartColor;
@@ -60,9 +63,10 @@ namespace Dust {
 
 			// Shape
 			Emission = serializedObject.FindProperty("Emission");
-			EmissionSize = serializedObject.FindProperty("EmissionSize");
 			InitialSpeed = serializedObject.FindProperty("InitialSpeed");
-			ScatterSphereVolume = serializedObject.FindProperty("ScatterSphereVolume");
+			EmissionSize = serializedObject.FindProperty("EmissionSize");
+			ScatterVolume = serializedObject.FindProperty("ScatterVolume");
+			EmissionMeshRenderer = serializedObject.FindProperty("EmissionMeshRenderer");
 
 			// Color
 			StartColor = serializedObject.FindProperty("StartColor");
@@ -96,10 +100,25 @@ namespace Dust {
 			EditorGUILayout.PropertyField(GravityModifier);
 
 			// Shape
+			EditorGUILayout.Space();
+			headerStyle = GUI.skin.label;
+			headerStyle.fontStyle = FontStyle.Bold;
+			EditorGUILayout.LabelField("Shape", headerStyle);
+
+			_shapeIdx = particles.Shape;
+			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
+			particles.Shape = _shapeIdx;
 			EditorGUILayout.PropertyField(Emission);
-			EditorGUILayout.PropertyField(EmissionSize);
 			EditorGUILayout.PropertyField(InitialSpeed);
-			EditorGUILayout.PropertyField(ScatterSphereVolume);
+			switch(_shapeIdx){
+				case 0:
+					EditorGUILayout.PropertyField(EmissionSize);
+					EditorGUILayout.PropertyField(ScatterVolume);
+					break;
+				case 1:
+					EditorGUILayout.PropertyField(EmissionMeshRenderer, new GUIContent("Mesh Renderer"));
+					break;
+			}
 
 			// Color
 			EditorGUILayout.PropertyField(StartColor);

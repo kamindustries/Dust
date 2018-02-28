@@ -12,6 +12,8 @@
 //an offset buffer with a value to offset the wave, and an output buffer that is written to by the kernel
 Texture2D<float4> _colorByLife;
 Texture2D<float4> _colorByVelocity;
+RWStructuredBuffer<MeshStruct> emissionMesh;
+RWStructuredBuffer<int> emissionMeshTris;
 RWStructuredBuffer<ParticleStruct> output;
 
 SamplerState sampler_colorByLife;
@@ -28,10 +30,11 @@ float3 initialVelocityDir;
 float3 gravityIn;
 float gravityModifier;
 
+int emissionShape;
 int emission;
-float3 emissionSize;
 float initialSpeed;
-float scatterSphereVolume;
+float3 emissionSize;
+float scatterVolume;
 
 float4 startColor;
 float velocityColorRange;
@@ -41,6 +44,9 @@ float3 noiseScale;
 float4 noiseOffset;
 float4 noiseOffsetSpeed;
 
+float4x4 emissionMeshMatrix;
+int emissionMeshVertCount;
+int emissionMeshTrisCount;
 
 const float cellSize = 1.25;
 
@@ -64,13 +70,14 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	float r1 = rand(float2(id.x+.1, id.y));
 	float r2 = rand(float2(id.x+.2, id.y));
 	float r3 = rand(float2(id.x+.3, id.y));
-	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterSphereVolume);
+	float r4 = rand(float2(id.x+fixedTime, id.y));
+	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
 
 	// Noise
 	float3 simplexNoise = float3(0,0,0);
 	float4 noiseCoord = float4(0,0,0,0);
 	float4 noiseTranslate = noiseOffset + (noiseOffsetSpeed * float4(fixedTime,fixedTime,fixedTime,fixedTime));
-	[call]switch(noiseType) {
+	[call] switch(noiseType) {
 		case 0:
 			noiseCoord.xy = (pos.xy * noiseScale.xy) + noiseTranslate.xy;
 			simplexNoise.xy = float2(snoise(noiseCoord.xy), snoise(noiseCoord.xy + 17.0));
@@ -88,12 +95,10 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 			break;
 	}
 	
-	// Gravity
-	float3 gravity = gravityIn * gravityModifier;
-
 	// Velocity
+	float3 gravity = gravityIn * gravityModifier * dt;
 	float3 velIn = simplexNoise + gravity;
-	vel = velIn * (mass * dt) + vel * momentum;
+	vel = (velIn * mass * dt) + vel * momentum;
 	pos += vel;
 	
 	// Color
@@ -111,11 +116,38 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	if (age <= 0.0) {
 		// Simple emission control
 		if (idx < emission) {
+			[call] switch(emissionShape) {
+				case 0:
+					pos = origin.xyz + (randSphere * emissionSize);
+					vel = randSphere * initialSpeed * dt;
+					break;
+				case 1:
+					// int randId = int(ceil(fit(r4, 0, 1, 0, float(emissionMeshVertCount))));
+					int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
+					int tri1 = emissionMeshTris[randId+0];
+					int tri2 = emissionMeshTris[randId+1];
+					int tri3 = emissionMeshTris[randId+2];
+					float3 a = emissionMesh[tri1].pos;
+					float3 b = emissionMesh[tri2].pos;
+					float3 c = emissionMesh[tri3].pos;
+					float r = rand(float2(id.x+fixedTime+.1, id.y));
+					float s = rand(float2(id.x+fixedTime+.2, id.y));
+					if (r + s >= 1.0) {
+						r = 1.-r;
+						s = 1.-s;
+					}
 
-			pos = origin.xyz + (randSphere * emissionSize);
+					float4 newPos = float4(a + ((b-a)*r) + ((c-a)*s), 1);
+					// newPos = float4(emissionMesh[randId].pos, 1);
+					newPos = mul(emissionMeshMatrix, newPos);
+					pos = newPos.xyz;
+
+					vel = emissionMesh[tri1].normal * initialSpeed * dt;
+					
+					break;
+			}
 			
-			vel = (randSphere * initialSpeed);
-			vel += (initialVelocityDir * inheritVelocityMult);
+			vel += initialVelocityDir * inheritVelocityMult * dt;
 
 			cd = startColor * _colorByLife[uint2(0,0)] * _colorByVelocity[uint2(0,0)];
 
