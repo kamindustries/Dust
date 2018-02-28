@@ -108,7 +108,11 @@ namespace Dust {
 			_shapeIdx = particles.Shape;
 			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
 			particles.Shape = _shapeIdx;
-			EditorGUILayout.PropertyField(Emission);
+			EditorGUI.BeginChangeCheck();
+				EditorGUILayout.PropertyField(Emission);
+			if (EditorGUI.EndChangeCheck()) {
+				particles.UpdateKernelArgs();
+			}			
 			EditorGUILayout.PropertyField(InitialSpeed);
 			switch(_shapeIdx){
 				case 0:
@@ -124,8 +128,8 @@ namespace Dust {
 			EditorGUILayout.PropertyField(StartColor);
 			// Interactive gradient editor
 			EditorGUI.BeginChangeCheck();
-			EditorGUILayout.PropertyField(ColorByLife, true);
-			EditorGUILayout.PropertyField(ColorByVelocity, true);
+				EditorGUILayout.PropertyField(ColorByLife, true);
+				EditorGUILayout.PropertyField(ColorByVelocity, true);
 			if (EditorGUI.EndChangeCheck()) {
 				particles.ColorByLife.Update();
 				particles.ColorByVelocity.Update();

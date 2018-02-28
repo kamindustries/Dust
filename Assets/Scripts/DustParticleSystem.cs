@@ -16,7 +16,7 @@ namespace Dust
         {
             get 
             {
-                return particlesMesh;
+                return m_particlesMesh;
             }
         }
         public ComputeShader ParticleSystemKernel;
@@ -36,7 +36,7 @@ namespace Dust
 
         [Header("Shape")]
         public int Shape = 0;
-        [Range(0,VertCount)]
+        [Range(0,m_maxVertCount)]
         public int Emission = 65000;
         public float InitialSpeed = 0f;
         public Vector3 EmissionSize = new Vector3(1f,1f,1f);
@@ -59,25 +59,27 @@ namespace Dust
         #endregion
         
         #region Private Variables
-        private Mesh particlesMesh;
-        private ComputeBuffer particlesBuffer;
-        private ComputeBuffer emissionMeshBuffer;
-        private ComputeBuffer emissionMeshTrisBuffer;
-        private int _kernel;
-        private Vector3 _origin;
-        private Vector3 _initialVelocityDir;
-        private Vector3 _prevPos;
-        private Mesh _emissionMesh;
-        private int emissionMeshTrisCount;
+        private int m_kernel;
+        private Mesh m_particlesMesh;
+        private ComputeBuffer m_particlesBuffer;
+        private ComputeBuffer m_emissionMeshBuffer;
+        private ComputeBuffer m_emissionMeshTrisBuffer;
+        private ComputeBuffer m_kernelArgs;
+        private int[] m_kernelArgsLocal;
+    
+        private Vector3 m_origin;
+        private Vector3 m_initialVelocityDir;
+        private Vector3 m_prevPos;
+        private Mesh m_emissionMesh;
+        private int m_emissionMeshTrisCount;
         
-        private const int NumElements = 14; //float4 cd; float3 pos, vel; float age, lifespan, mass, momentum
-        private const int VertCount = 1048576; //64*64*16*16 (Groups*ThreadsPerGroup)
+        private const int m_maxVertCount = 1048576; //64*64*16*16 (Groups*ThreadsPerGroup)
         #endregion
 
         //We initialize the buffers and the material used to draw.
         void Start()
         {
-            _kernel = ParticleSystemKernel.FindKernel("DustParticleSystemKernel");
+            m_kernel = ParticleSystemKernel.FindKernel("DustParticleSystemKernel");
             CreateBuffers();            
             UpdateUniforms();
 
@@ -98,9 +100,10 @@ namespace Dust
 
         void Update() 
         {
-            ParticleMaterial.SetBuffer("dataBuffer", particlesBuffer);
+            ParticleMaterial.SetBuffer("dataBuffer", m_particlesBuffer);
+            ParticleMaterial.SetInt("numThreads", Emission);
             ParticleMaterial.SetPass(0);
-            Graphics.DrawMesh(particlesMesh, transform.localToWorldMatrix, ParticleMaterial, 0, null, 0, null, true, true);
+            Graphics.DrawMesh(m_particlesMesh, transform.localToWorldMatrix, ParticleMaterial, 0, null, 0, null, true, true);
         }
 
         void OnDisable()
@@ -111,13 +114,14 @@ namespace Dust
         //We dispatch 32x32x1 groups of threads of our CSMain kernel.
         private void Dispatch()
         {
-            ParticleSystemKernel.Dispatch(_kernel, 64, 64, 1);
+            // ParticleSystemKernel.Dispatch(m_kernel, 64, 64, 1);
+            ParticleSystemKernel.DispatchIndirect(m_kernel, m_kernelArgs);
         }
 
         private void UpdateUniforms() 
         {
             // Update internal variables
-            _prevPos = transform.position;
+            m_prevPos = transform.position;
 
             // Follow mouse cursor
             if (Input.GetMouseButton(0)){
@@ -132,28 +136,28 @@ namespace Dust
                 case 0:
                     if (transform.parent != null) {
                         if (transform.parent.gameObject.GetComponent<Rigidbody>() != null) {
-                            _initialVelocityDir = transform.parent.gameObject.GetComponent<Rigidbody>().velocity;
+                            m_initialVelocityDir = transform.parent.gameObject.GetComponent<Rigidbody>().velocity;
                         }
                     }
                     else {
-                        _initialVelocityDir = Vector3.zero;
+                        m_initialVelocityDir = Vector3.zero;
                     }
                     break;
                 case 1:
-                    _initialVelocityDir = transform.position-_prevPos;
+                    m_initialVelocityDir = transform.position-m_prevPos;
                     break;
             }
 
-            _origin = transform.position;
+            m_origin = transform.position;
 
             ParticleSystemKernel.SetFloat("dt", Time.fixedDeltaTime);
             ParticleSystemKernel.SetFloat("fixedTime", Time.fixedTime);
-            ParticleSystemKernel.SetVector("origin", _origin);
+            ParticleSystemKernel.SetVector("origin", m_origin);
             ParticleSystemKernel.SetVector("massNew", Mass);
             ParticleSystemKernel.SetVector("momentumNew", Momentum);
             ParticleSystemKernel.SetVector("lifespanNew", Lifespan);
             ParticleSystemKernel.SetFloat("inheritVelocityMult", InheritVelocity);
-            ParticleSystemKernel.SetVector("initialVelocityDir", _initialVelocityDir);
+            ParticleSystemKernel.SetVector("initialVelocityDir", m_initialVelocityDir);
             ParticleSystemKernel.SetVector("gravityIn", Physics.gravity);
             ParticleSystemKernel.SetFloat("gravityModifier", GravityModifier);
             ParticleSystemKernel.SetInt("emissionShape", Shape);
@@ -170,8 +174,8 @@ namespace Dust
             ParticleSystemKernel.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
             if (EmissionMeshRenderer) {
                 ParticleSystemKernel.SetMatrix("emissionMeshMatrix", EmissionMeshRenderer.localToWorldMatrix);
-                ParticleSystemKernel.SetInt("emissionMeshVertCount", _emissionMesh.vertexCount);
-                ParticleSystemKernel.SetInt("emissionMeshTrisCount", emissionMeshTrisCount);
+                ParticleSystemKernel.SetInt("emissionMeshVertCount", m_emissionMesh.vertexCount);
+                ParticleSystemKernel.SetInt("m_emissionMeshTrisCount", m_emissionMeshTrisCount);
                 
             }
         }
@@ -181,38 +185,44 @@ namespace Dust
         private void CreateBuffers()
         {
             // Allocate
-            particlesBuffer = new ComputeBuffer(VertCount, sizeof(float) * NumElements); //float3 pos, vel, cd; float age
-            particlesMesh = new Mesh();
-            float[] particlesTemp = new float[VertCount * NumElements];
-            Vector3 [] meshVerts = new Vector3[VertCount];
-            int [] meshIndices = new int[VertCount];
+            int numElements = 14; //float4 cd; float3 pos, vel; float age, lifespan, mass, momentum
+            m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
+            m_particlesBuffer = new ComputeBuffer(m_maxVertCount, sizeof(float) * numElements); //float3 pos, vel, cd; float age
 
-            // Initialize
-            for (int i = 0; i < VertCount; i++) {
+            m_particlesMesh = new Mesh();
+            m_kernelArgsLocal = new int[3];
+            float[] particlesTemp = new float[m_maxVertCount * numElements];
+            Vector3 [] meshVerts = new Vector3[m_maxVertCount];
+            int [] meshIndices = new int[m_maxVertCount];
+
+            UpdateKernelArgs();
+            ParticleSystemKernel.SetBuffer(m_kernel, "kernelArgs", m_kernelArgs);
+
+            for (int i = 0; i < m_maxVertCount; i++) {
                 meshVerts[i] = Random.insideUnitSphere * 50f;
                 meshIndices[i] = i;
-                for (int j = 0; j < NumElements; j++) {
-                    particlesTemp[(i*NumElements)+j] = 0f;
+                for (int j = 0; j < numElements; j++) {
+                    particlesTemp[(i*numElements)+j] = 0f;
                 }
             }
 
-            particlesBuffer.SetData(particlesTemp);
-            ParticleSystemKernel.SetBuffer(_kernel, "output", particlesBuffer);
+            m_particlesBuffer.SetData(particlesTemp);
+            ParticleSystemKernel.SetBuffer(m_kernel, "output", m_particlesBuffer);
 
             // Dummy mesh geometry for points
-            particlesMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            particlesMesh.vertices = meshVerts;
-            particlesMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
-            particlesMesh.RecalculateBounds();
+            m_particlesMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            m_particlesMesh.vertices = meshVerts;
+            m_particlesMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
+            m_particlesMesh.RecalculateBounds();
             MeshFilter mf = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             mf.hideFlags = HideFlags.HideInInspector;
-            mf.mesh = particlesMesh;
+            mf.mesh = m_particlesMesh;
 
             // Create color ramp textures
             ColorByLife.Setup();
             ColorByVelocity.Setup();
-            ParticleSystemKernel.SetTexture(_kernel, "_colorByLife", (Texture)ColorByLife.Texture);
-            ParticleSystemKernel.SetTexture(_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
+            ParticleSystemKernel.SetTexture(m_kernel, "_colorByLife", (Texture)ColorByLife.Texture);
+            ParticleSystemKernel.SetTexture(m_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             if (EmissionMeshRenderer) {
                 UpdateMeshSource();
@@ -220,54 +230,65 @@ namespace Dust
 
         }
 
+        public void UpdateKernelArgs()
+        {
+            int groupSize = (int)Mathf.Ceil(Mathf.Sqrt(Emission)/16f);
+
+            m_kernelArgsLocal[0] = groupSize;
+            m_kernelArgsLocal[1] = groupSize;
+            m_kernelArgsLocal[2] = 1;
+
+            m_kernelArgs.SetData(m_kernelArgsLocal);
+        }
+
         private void UpdateMeshSource() 
         {
-            _emissionMesh = EmissionMeshRenderer.GetComponent<MeshFilter>().sharedMesh;
+            m_emissionMesh = EmissionMeshRenderer.GetComponent<MeshFilter>().sharedMesh;
             int numAttribs = 3; //pos, normal, cd
-            emissionMeshTrisCount = _emissionMesh.triangles.Length;
-            emissionMeshBuffer = new ComputeBuffer(_emissionMesh.vertexCount, sizeof(float) * 3 * numAttribs); 
-            emissionMeshTrisBuffer = new ComputeBuffer(emissionMeshTrisCount, sizeof(int)); 
+            m_emissionMeshTrisCount = m_emissionMesh.triangles.Length;
+            m_emissionMeshBuffer = new ComputeBuffer(m_emissionMesh.vertexCount, sizeof(float) * 3 * numAttribs); 
+            m_emissionMeshTrisBuffer = new ComputeBuffer(m_emissionMeshTrisCount, sizeof(int)); 
 
-            bool hasNormals = _emissionMesh.normals.Length == _emissionMesh.vertexCount ? true : false;
-            bool hasColors = _emissionMesh.colors.Length == _emissionMesh.vertexCount ? true : false;
+            bool hasNormals = m_emissionMesh.normals.Length == m_emissionMesh.vertexCount ? true : false;
+            bool hasColors = m_emissionMesh.colors.Length == m_emissionMesh.vertexCount ? true : false;
             
-            Vector3[] emissionMeshTemp = new Vector3[_emissionMesh.vertexCount * numAttribs];
-            int[] emissionMeshTrisTemp = new int[emissionMeshTrisCount];
+            Vector3[] emissionMeshTemp = new Vector3[m_emissionMesh.vertexCount * numAttribs];
+            int[] emissionMeshTrisTemp = new int[m_emissionMeshTrisCount];
             
-            for (int i = 0; i < _emissionMesh.vertexCount; i++) {
-                emissionMeshTemp[(i*numAttribs)+0] = _emissionMesh.vertices[i];
+            for (int i = 0; i < m_emissionMesh.vertexCount; i++) {
+                emissionMeshTemp[(i*numAttribs)+0] = m_emissionMesh.vertices[i];
                 emissionMeshTemp[(i*numAttribs)+1] = new Vector3(0f,1f,0f); //normals
                 emissionMeshTemp[(i*numAttribs)+2] = Vector3.one; //colors
 
                 if (hasNormals) {
-                    emissionMeshTemp[(i*numAttribs)+1] = _emissionMesh.normals[i];
+                    emissionMeshTemp[(i*numAttribs)+1] = m_emissionMesh.normals[i];
                 }
 
                 if (hasColors) {
-                    emissionMeshTemp[(i*numAttribs)+2].x = _emissionMesh.colors[i].r;
-                    emissionMeshTemp[(i*numAttribs)+2].y = _emissionMesh.colors[i].g;
-                    emissionMeshTemp[(i*numAttribs)+2].z = _emissionMesh.colors[i].b;
+                    emissionMeshTemp[(i*numAttribs)+2].x = m_emissionMesh.colors[i].r;
+                    emissionMeshTemp[(i*numAttribs)+2].y = m_emissionMesh.colors[i].g;
+                    emissionMeshTemp[(i*numAttribs)+2].z = m_emissionMesh.colors[i].b;
                 }
             }
 
-            for (int i = 0; i < emissionMeshTrisCount; i++) {
-                emissionMeshTrisTemp[i] = _emissionMesh.triangles[i];
-                print(_emissionMesh.triangles[i]);
+            for (int i = 0; i < m_emissionMeshTrisCount; i++) {
+                emissionMeshTrisTemp[i] = m_emissionMesh.triangles[i];
             }
             
-            emissionMeshBuffer.SetData(emissionMeshTemp);
-            emissionMeshTrisBuffer.SetData(emissionMeshTrisTemp);
-            ParticleSystemKernel.SetBuffer(_kernel, "emissionMesh", emissionMeshBuffer);
-            ParticleSystemKernel.SetBuffer(_kernel, "emissionMeshTris", emissionMeshTrisBuffer);
+            m_emissionMeshBuffer.SetData(emissionMeshTemp);
+            m_emissionMeshTrisBuffer.SetData(emissionMeshTrisTemp);
+            ParticleSystemKernel.SetBuffer(m_kernel, "emissionMesh", m_emissionMeshBuffer);
+            ParticleSystemKernel.SetBuffer(m_kernel, "emissionMeshTris", m_emissionMeshTrisBuffer);
         }
 
         //Remember to release buffers and destroy the material when play has been stopped.
         private void ReleaseBuffers()
         {
-            particlesBuffer.Release();
+            m_particlesBuffer.Release();
+            m_kernelArgs.Release();
             if (EmissionMeshRenderer) {
-                emissionMeshBuffer.Release();
-                emissionMeshTrisBuffer.Release();
+                m_emissionMeshBuffer.Release();
+                m_emissionMeshTrisBuffer.Release();
             }
         }
 

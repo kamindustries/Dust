@@ -25,6 +25,7 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
+			int numThreads;
 			
 
 			struct v2f 
@@ -34,6 +35,7 @@ Shader "Dust/Pointcloud"
 				fixed4 baseCd : COLOR0;
                 fixed3 diff : COLOR1;
                 fixed3 ambient : COLOR2;
+				fixed3 metadata : COLOR3; // r=clip
                 float4 pos : SV_POSITION;
 			};
 
@@ -54,12 +56,15 @@ Shader "Dust/Pointcloud"
 
 				o.baseCd = dataBuffer[id].cd;
 
+				o.metadata = fixed3(0,0,0);
+				if (id >= uint(numThreads)) o.metadata.r = 1;
 				return o;
 			}
 
 			//Pixel function returns a solid color for each point.
 			float4 frag(v2f i) : COLOR
 			{
+				clip(i.metadata.r > 0 ? -1 : 1); 
 				fixed4 col = i.baseCd;
 				fixed shadow = SHADOW_ATTENUATION(i);
 				fixed3 lighting = i.diff * shadow + i.ambient;
@@ -82,10 +87,12 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 
 			StructuredBuffer<ParticleStruct> dataBuffer;
+			int numThreads;
 
 			struct v2f_shdw
 			{
 				float4 pos : SV_POSITION;
+				fixed3 metadata : COLOR0; // r=clip
 			};
 
 			v2f_shdw vert(uint id : SV_VertexID)
@@ -93,11 +100,14 @@ Shader "Dust/Pointcloud"
 				v2f_shdw o;
 				float3 worldPos = dataBuffer[id].pos;
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
+				o.metadata = fixed3(0,0,0);
+				if (id >= uint(numThreads)) o.metadata.r = 1;
 				return o;
 			}
 
             float4 frag(v2f_shdw i) : SV_Target
             {
+				clip(i.metadata.r > 0 ? -1 : 1); 
                 SHADOW_CASTER_FRAGMENT(i)
             }
             ENDCG

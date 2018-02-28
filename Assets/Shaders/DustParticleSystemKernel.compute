@@ -15,6 +15,7 @@ Texture2D<float4> _colorByVelocity;
 RWStructuredBuffer<MeshStruct> emissionMesh;
 RWStructuredBuffer<int> emissionMeshTris;
 RWStructuredBuffer<ParticleStruct> output;
+RWStructuredBuffer<int> kernelArgs;
 
 SamplerState sampler_colorByLife;
 
@@ -53,11 +54,10 @@ const float cellSize = 1.25;
 
 //The kernel for this compute shader, each thread group contains a number of threads specified by numthreads(x,y,z)
 //We lookup the the index into the flat array by using x + y * x_stride
-//The position is calculated from the thread index and then the z component is shifted by the Wave function
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 {
-	int idx = id.x + id.y * thread_group_size_x * 32;
+	int idx = id.x + id.y * thread_group_size_x * kernelArgs[0];
 
 	float3 pos = output[idx].pos;
 	float3 vel = output[idx].vel;
@@ -69,7 +69,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
 	float r2 = rand(float2(id.x+.2, id.y));
-	float r3 = rand(float2(id.x+.3, id.y));
+	float r3 = rand(float2(id.x+0, id.y));
 	float r4 = rand(float2(id.x+fixedTime, id.y));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
 
@@ -122,7 +122,6 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 					vel = randSphere * initialSpeed * dt;
 					break;
 				case 1:
-					// int randId = int(ceil(fit(r4, 0, 1, 0, float(emissionMeshVertCount))));
 					int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
 					int tri1 = emissionMeshTris[randId+0];
 					int tri2 = emissionMeshTris[randId+1];
@@ -139,6 +138,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 
 					float4 newPos = float4(a + ((b-a)*r) + ((c-a)*s), 1);
 					// newPos = float4(emissionMesh[randId].pos, 1);
+
 					newPos = mul(emissionMeshMatrix, newPos);
 					pos = newPos.xyz;
 
@@ -149,7 +149,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 			
 			vel += initialVelocityDir * inheritVelocityMult * dt;
 
-			cd = startColor * _colorByLife[uint2(0,0)] * _colorByVelocity[uint2(0,0)];
+			cd = startColor;
 
 			float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
 			age = newLifespan;

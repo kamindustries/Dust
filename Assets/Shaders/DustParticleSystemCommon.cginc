@@ -30,7 +30,7 @@ struct MeshStruct
 
 float rand(float2 co)
 {
-	return frac(sin(dot(co.xy,float2(12.9898,78.233))) * 43758.5453);
+	return frac(sin(dot(co.xy,float2(12.9898,78.233))) * 43758.5453123);
 }
 
 float3 randomSpherePoint(float3 rand, float scatterVolume = 1.0) {
