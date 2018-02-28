@@ -1,3 +1,7 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader "Dust/Pointcloud"
 {
 	SubShader
@@ -21,14 +25,9 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
+			
 			float3 xform;
-
-			struct appdata
-			{
-				float4 vertex : POSITION;
-				float2 uv : TEXCOORD0;
-				half3 normal : NORMAL;
-			};
+			float4x4 iMatrix;
 
 			struct v2f 
 			{
@@ -40,14 +39,18 @@ Shader "Dust/Pointcloud"
                 float4 pos : SV_POSITION;
 			};
 
-			v2f vert(uint id : SV_VertexID, appdata v)
+			v2f vert(uint id : SV_VertexID, appdata_base v)
 			{
 				v2f o;
 				float3 worldPos = dataBuffer[id].pos;
-				o.pos = UnityObjectToClipPos(worldPos);
+				// o.pos = mul(iMatrix, float4(worldPos,1.0f));
+				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
+				// o.pos = UnityObjectToClipPos(worldPos);
+				// o.pos = UnityObjectToClipPos(float4(worldPos,1.0f));
+				// o.pos = UnityObjectToClipPos(worldPos);
 
 				// lighting
-				o.uv = v.uv;
+				o.uv = v.texcoord;
                 half3 worldNormal = UnityObjectToWorldNormal(half3(0,1,0)); //arbitrary normal for points
                 half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
                 o.diff = nl * _LightColor0.rgb;
@@ -94,8 +97,7 @@ Shader "Dust/Pointcloud"
 			{
 				v2f_shdw o;
 				float3 worldPos = dataBuffer[id].pos;
-				o.pos = UnityObjectToClipPos(worldPos);
-				// o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
+				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
 				return o;
 			}
 

@@ -92,8 +92,10 @@ namespace Dust
         {
             ParticleMaterial.SetBuffer("dataBuffer", particlesBuffer);
             ParticleMaterial.SetVector("xform", transform.position);
+            // Matrix4x4 m = GetComponent<Renderer>().transform.localToWorldMatrix;
+            // ParticleMaterial.SetMatrix("iMatrix", m);
             ParticleMaterial.SetPass(0);
-            Graphics.DrawMesh(particlesMesh, Matrix4x4.identity, ParticleMaterial, 0, null, 0, null, true, true);
+            Graphics.DrawMesh(particlesMesh, transform.localToWorldMatrix, ParticleMaterial, 0, null, 0, null, true, true);
         }
 
         void OnDisable()
@@ -171,7 +173,7 @@ namespace Dust
 
             // Initialize
             for (int i = 0; i < VertCount; i++) {
-                meshVerts[i] = new Vector3(Random.value * 50f, Random.value * 50f, Random.value * 50f);
+                meshVerts[i] = Random.insideUnitSphere * 50f;
                 meshIndices[i] = i;
                 for (int j = 0; j < NumElements; j++) {
                     particlesTemp[(i*NumElements)+j] = 0f;

@@ -66,8 +66,6 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 
 	// Noise
 	float3 noiseCoord = (pos * noiseScale) + noiseOffset;
-	// float3 noiseCoord = trunc(pos);
-	// float3 noiseCoord = (trunc(pos*1000.)/1000. * noiseScale) + noiseOffset;
 	float3 simplexNoise = float3(snoise(noiseCoord), snoise(noiseCoord + 17.0), snoise(noiseCoord + 43.0));
 	simplexNoise *= noiseAmplitude;
 	
@@ -96,6 +94,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 		if (idx < emission) {
 
 			pos = origin.xyz + (randSphere * emissionSize);
+			// pos = (randSphere * emissionSize);
 			
 			vel = (randSphere * initialSpeed);
 			vel += (initialVelocityDir * inheritVelocityMult);
