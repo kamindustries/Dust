@@ -30,3 +30,4 @@ Properties with two values imply a random selection between them.
 * Depth buffer collision
 * Pick noise dimension
 * Dynamic kernel size
+* Switch to Renderer.SetPropertyBlock for setting uniforms
