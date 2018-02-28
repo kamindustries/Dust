@@ -48,10 +48,11 @@ namespace Dust
         public ColorRampRange ColorByVelocity;
 
         [Header("Noise")]
+        public int NoiseType = 1;
         public Vector3 NoiseAmplitude = new Vector3(0f,0f,0f);
         public Vector3 NoiseScale = new Vector3(1f,1f,1f);
-        public Vector3 NoiseOffset = new Vector3(0f,0f,0f);
-        public Gradient TestGradient;
+        public Vector4 NoiseOffset = new Vector4(0f,0f,0f,0f);
+        public Vector4 NoiseOffsetSpeed = new Vector4(0f,0f,0f,0f);
         #endregion
         
         #region Private Variables
@@ -91,9 +92,6 @@ namespace Dust
         void Update() 
         {
             ParticleMaterial.SetBuffer("dataBuffer", particlesBuffer);
-            ParticleMaterial.SetVector("xform", transform.position);
-            // Matrix4x4 m = GetComponent<Renderer>().transform.localToWorldMatrix;
-            // ParticleMaterial.SetMatrix("iMatrix", m);
             ParticleMaterial.SetPass(0);
             Graphics.DrawMesh(particlesMesh, transform.localToWorldMatrix, ParticleMaterial, 0, null, 0, null, true, true);
         }
@@ -111,6 +109,7 @@ namespace Dust
 
         private void UpdateUniforms() 
         {
+            // Update internal variables
             prevPos = transform.position;
 
             // Follow mouse cursor
@@ -140,7 +139,8 @@ namespace Dust
 
             origin = transform.position;
 
-            ParticleSystemKernel.SetFloat("dt", Time.deltaTime);
+            ParticleSystemKernel.SetFloat("dt", Time.fixedDeltaTime);
+            ParticleSystemKernel.SetFloat("fixedTime", Time.fixedTime);
             ParticleSystemKernel.SetVector("origin", origin);
             ParticleSystemKernel.SetVector("massNew", Mass);
             ParticleSystemKernel.SetVector("momentumNew", Momentum);
@@ -155,9 +155,11 @@ namespace Dust
             ParticleSystemKernel.SetFloat("scatterSphereVolume", ScatterSphereVolume);
             ParticleSystemKernel.SetVector("startColor", StartColor);
             ParticleSystemKernel.SetFloat("velocityColorRange", ColorByVelocity.Range);
+            ParticleSystemKernel.SetInt("noiseType", NoiseType);
             ParticleSystemKernel.SetVector("noiseAmplitude", NoiseAmplitude);
             ParticleSystemKernel.SetVector("noiseScale", NoiseScale);
             ParticleSystemKernel.SetVector("noiseOffset", NoiseOffset);
+            ParticleSystemKernel.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
         }
 
 
@@ -188,7 +190,6 @@ namespace Dust
             particlesMesh.vertices = meshVerts;
             particlesMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
             particlesMesh.RecalculateBounds();
-            Debug.Log(particlesMesh.bounds);
             MeshFilter mf = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
             mf.hideFlags = HideFlags.HideInInspector;
             mf.mesh = particlesMesh;

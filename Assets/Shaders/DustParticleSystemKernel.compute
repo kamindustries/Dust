@@ -17,6 +17,7 @@ RWStructuredBuffer<ParticleStruct> output;
 SamplerState sampler_colorByLife;
 
 float dt;
+float fixedTime; //seconds
 float3 origin;
 float2 massNew;
 float2 momentumNew;
@@ -34,13 +35,14 @@ float scatterSphereVolume;
 
 float4 startColor;
 float velocityColorRange;
+int noiseType;
 float3 noiseAmplitude;
 float3 noiseScale;
-float3 noiseOffset;
+float4 noiseOffset;
+float4 noiseOffsetSpeed;
 
 
 const float cellSize = 1.25;
-
 
 
 //The kernel for this compute shader, each thread group contains a number of threads specified by numthreads(x,y,z)
@@ -65,9 +67,26 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterSphereVolume);
 
 	// Noise
-	float3 noiseCoord = (pos * noiseScale) + noiseOffset;
-	float3 simplexNoise = float3(snoise(noiseCoord), snoise(noiseCoord + 17.0), snoise(noiseCoord + 43.0));
-	simplexNoise *= noiseAmplitude;
+	float3 simplexNoise = float3(0,0,0);
+	float4 noiseCoord = float4(0,0,0,0);
+	float4 noiseTranslate = noiseOffset + (noiseOffsetSpeed * float4(fixedTime,fixedTime,fixedTime,fixedTime));
+	[call]switch(noiseType) {
+		case 0:
+			noiseCoord.xy = (pos.xy * noiseScale.xy) + noiseTranslate.xy;
+			simplexNoise.xy = float2(snoise(noiseCoord.xy), snoise(noiseCoord.xy + 17.0));
+			simplexNoise.xy *= noiseAmplitude.xy;
+			break;
+		case 1:
+			noiseCoord.xyz = (pos * noiseScale) + noiseTranslate.xyz;
+			simplexNoise.xyz = float3(snoise(noiseCoord.xyz), snoise(noiseCoord.xyz + 17.0), snoise(noiseCoord.xyz + 43.0));
+			simplexNoise.xyz *= noiseAmplitude;
+			break;
+		case 2:
+			noiseCoord = (float4(pos,1) * float4(noiseScale,1)) + noiseTranslate;
+			simplexNoise = float3(snoise(noiseCoord), snoise(noiseCoord + 17.0), snoise(noiseCoord + 43.0));
+			simplexNoise *= noiseAmplitude;
+			break;
+	}
 	
 	// Gravity
 	float3 gravity = gravityIn * gravityModifier;
@@ -94,7 +113,6 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 		if (idx < emission) {
 
 			pos = origin.xyz + (randSphere * emissionSize);
-			// pos = (randSphere * emissionSize);
 			
 			vel = (randSphere * initialSpeed);
 			vel += (initialVelocityDir * inheritVelocityMult);

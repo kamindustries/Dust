@@ -1,14 +1,13 @@
 # Dust
+Dust is a GPU-based particle simulation and rendering system for Unity. All simulation is done in world space.
 
-Dust is a GPU-based particle simulation and rendering system for Unity. 
+### Usage
+Add the DustParticleSystem component to a Game Object and press play.   
+The two values for mass, momentum, and lifespan properties set the minimum and maximum range for a random value assigned when the particle is spawned.   
 
 ### Requirements
 * \>=Unity 2017.3
 * GPU with compute shader support
-
-### Usage
-Add the DustParticleSystem component to a Game Object and press play.   
-Properties with two values imply a random selection between them.
 
 ### To Do
 * Rotation over lifetime + by speed
@@ -28,6 +27,5 @@ Properties with two values imply a random selection between them.
     - Precompute random fields
     - Precompute noise if not animated (and at lower resolution?)
 * Depth buffer collision
-* Pick noise dimension
 * Dynamic kernel size
 * Switch to Renderer.SetPropertyBlock for setting uniforms

@@ -19,6 +19,8 @@ namespace Dust {
 
 		// Velocity
         SerializedProperty InheritVelocity;
+		string[] _emitterVelocity = new string[] {"Rigid body", "Transform"};
+		int _emitterVelocityIdx = 0;
         SerializedProperty GravityModifier;
 
 		// Shape
@@ -33,12 +35,13 @@ namespace Dust {
         SerializedProperty ColorByVelocity;
 
 		// Noise
-        SerializedProperty NoiseAmplitude;
-        SerializedProperty NoiseScale;
-        SerializedProperty NoiseOffset;
-
-		string[] _emitterVelocity = new string[] {"Rigid body", "Transform"};
-		int _emitterVelocityIdx = 0;
+		string[] _noiseType = new string[] {"2D", "3D", "4D"};
+		int _noiseTypeIdx = 1;
+        Vector3 _noiseAmplitude = new Vector4(0f,0f,0f);
+        Vector3 _noiseScale = new Vector4(1f,1f,1f);
+        Vector4 _noiseOffset = new Vector4(0f,0f,0f,0f);
+        Vector4 _noiseOffsetSpeed = new Vector4(0f,0f,0f,0f);
+		GUIStyle headerStyle;
 
 		void OnEnable() 
 		{
@@ -65,11 +68,8 @@ namespace Dust {
 			StartColor = serializedObject.FindProperty("StartColor");
 			ColorByLife = serializedObject.FindProperty("ColorByLife");
 			ColorByVelocity = serializedObject.FindProperty("ColorByVelocity");
-
+			
 			// Noise
-			NoiseAmplitude = serializedObject.FindProperty("NoiseAmplitude");
-			NoiseScale = serializedObject.FindProperty("NoiseScale");
-			NoiseOffset = serializedObject.FindProperty("NoiseOffset");
 			
 
 		}
@@ -113,10 +113,31 @@ namespace Dust {
 			}
 
 			// Noise
-			EditorGUILayout.PropertyField(NoiseAmplitude);
-			EditorGUILayout.PropertyField(NoiseScale);
-			EditorGUILayout.PropertyField(NoiseOffset);
+			// Using Vector4Field because for some reason PropertyField renders an array
+			// Also have to manually draw the header because it doesn't like Popup or Vector4Fields
+			EditorGUILayout.Space();
+			headerStyle = GUI.skin.label;
+			headerStyle.fontStyle = FontStyle.Bold;
+			EditorGUILayout.LabelField("Noise", headerStyle);
+
+			_noiseTypeIdx = particles.NoiseType;
+			_noiseAmplitude = particles.NoiseAmplitude;
+        	_noiseScale = particles.NoiseScale;
+        	_noiseOffset = particles.NoiseOffset;
+        	_noiseOffsetSpeed = particles.NoiseOffsetSpeed;
+
+			_noiseTypeIdx = EditorGUILayout.Popup("Noise Type", _noiseTypeIdx, _noiseType);
+			_noiseAmplitude = EditorGUILayout.Vector3Field("Noise Amplitude", _noiseAmplitude);
+			_noiseScale = EditorGUILayout.Vector3Field("Noise Scale", _noiseScale);
+			_noiseOffset = EditorGUILayout.Vector4Field("Noise Offset", _noiseOffset);
+			_noiseOffsetSpeed = EditorGUILayout.Vector4Field("Noise Offset Speed", _noiseOffsetSpeed);
 			
+			particles.NoiseType = _noiseTypeIdx;
+			particles.NoiseAmplitude = _noiseAmplitude;
+			particles.NoiseScale = _noiseScale;
+			particles.NoiseOffset = _noiseOffset;
+			particles.NoiseOffsetSpeed = _noiseOffsetSpeed;
+
 			EditorUtility.SetDirty(particles);
 
 			serializedObject.ApplyModifiedProperties();

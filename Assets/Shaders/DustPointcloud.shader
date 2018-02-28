@@ -26,8 +26,6 @@ Shader "Dust/Pointcloud"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
 			
-			float3 xform;
-			float4x4 iMatrix;
 
 			struct v2f 
 			{
@@ -43,11 +41,7 @@ Shader "Dust/Pointcloud"
 			{
 				v2f o;
 				float3 worldPos = dataBuffer[id].pos;
-				// o.pos = mul(iMatrix, float4(worldPos,1.0f));
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
-				// o.pos = UnityObjectToClipPos(worldPos);
-				// o.pos = UnityObjectToClipPos(float4(worldPos,1.0f));
-				// o.pos = UnityObjectToClipPos(worldPos);
 
 				// lighting
 				o.uv = v.texcoord;
