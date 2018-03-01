@@ -113,58 +113,39 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	age -= dt;
 
 	// Spawn new particles
-	if (age <= 0.0) {
-		// Simple emission control
-		if (idx < emission) {
-			[call] switch(emissionShape) {
-				case 0:
-					pos = origin.xyz + (randSphere * emissionSize);
-					vel = randSphere * initialSpeed * dt;
-					break;
-				case 1:
-					int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
-					int tri1 = emissionMeshTris[randId+0];
-					int tri2 = emissionMeshTris[randId+1];
-					int tri3 = emissionMeshTris[randId+2];
-					float3 a = emissionMesh[tri1].pos;
-					float3 b = emissionMesh[tri2].pos;
-					float3 c = emissionMesh[tri3].pos;
-					float r = rand(float2(id.x+fixedTime+.1, id.y));
-					float s = rand(float2(id.x+fixedTime+.2, id.y));
-					if (r + s >= 1.0) {
-						r = 1.-r;
-						s = 1.-s;
-					}
+	if (age <= 0.0) 
+	{
+		[call] switch(emissionShape) 
+		{
+			// Procedural sphere
+			case 0:
+				pos = origin.xyz + (randSphere * emissionSize);
+				vel = randSphere * initialSpeed * dt;
+				break;
 
-					float4 newPos = float4(a + ((b-a)*r) + ((c-a)*s), 1);
-					// newPos = float4(emissionMesh[randId].pos, 1);
+			// Mesh emission
+			case 1:
+				// Pick a random index into triangle buffer that's divisible by 3
+			    int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
 
-					newPos = mul(emissionMeshMatrix, newPos);
-					pos = newPos.xyz;
+				// Get the 3 id's that make up that triangle and generate a random point between them
+				int3 tris = int3(emissionMeshTris[randId+0], emissionMeshTris[randId+1], emissionMeshTris[randId+2]);
+				float4 newPos = float4(bayesianCoordinate(emissionMesh, tris, float2(r1,r2)), 1.);
 
-					vel = emissionMesh[tri1].normal * initialSpeed * dt;
-					
-					break;
-			}
-			
-			vel += initialVelocityDir * inheritVelocityMult * dt;
-
-			cd = startColor;
-
-			float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
-			age = newLifespan;
-
-			output[idx].lifespan = newLifespan;
-			output[idx].mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
-			output[idx].momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
+				newPos = mul(emissionMeshMatrix, newPos);
+				pos = newPos.xyz;
+				vel = emissionMesh[tris.x].normal * initialSpeed * dt;
+				break;
 		}
-		else {
-			pos = randSphere + 1000000;
-			vel = float3(0,0,0);
-			cd = float4(0,0,0,0);
-			age = 0.0;
-		}
+		
+		vel += initialVelocityDir * inheritVelocityMult * dt;
 
+		float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
+		age = newLifespan;
+
+		output[idx].lifespan = newLifespan;
+		output[idx].mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
+		output[idx].momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
 	}
 
 	output[idx].pos = pos;

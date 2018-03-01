@@ -25,7 +25,7 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
-			int numThreads;
+			int numParticles;
 			
 
 			struct v2f 
@@ -57,7 +57,7 @@ Shader "Dust/Pointcloud"
 				o.baseCd = dataBuffer[id].cd;
 
 				o.metadata = fixed3(0,0,0);
-				if (id >= uint(numThreads)) o.metadata.r = 1;
+				if (id >= uint(numParticles)) o.metadata.r = 1;
 				return o;
 			}
 
@@ -87,7 +87,7 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 
 			StructuredBuffer<ParticleStruct> dataBuffer;
-			int numThreads;
+			int numParticles;
 
 			struct v2f_shdw
 			{
@@ -101,7 +101,7 @@ Shader "Dust/Pointcloud"
 				float3 worldPos = dataBuffer[id].pos;
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
 				o.metadata = fixed3(0,0,0);
-				if (id >= uint(numThreads)) o.metadata.r = 1;
+				if (id >= uint(numParticles)) o.metadata.r = 1;
 				return o;
 			}
 

@@ -33,5 +33,4 @@ Add the DustParticleSystem component to a Game Object and press play.
     - Precompute random fields
     - Precompute noise if not animated (and at lower resolution?)
 * Depth buffer collision
-* Dynamic kernel size
 * Switch to Renderer.SetPropertyBlock for setting uniforms
