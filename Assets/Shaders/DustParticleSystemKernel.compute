@@ -133,7 +133,10 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 
 				// Get the 3 id's that make up that triangle and generate a random point between them
 				int3 tris = int3(emissionMeshTris[randId+0], emissionMeshTris[randId+1], emissionMeshTris[randId+2]);
-				pos = bayesianCoordinate(emissionMesh, tris, float2(r1,r2));
+				float3 a = output[tris.x].pos;
+				float3 b = output[tris.y].pos;
+				float3 c = output[tris.z].pos;
+				pos = bayesianCoordinate(a, b, c, float2(r1,r2));
 				
 				// Velocity direction is the first vertex in the triangle...lazy
 				vel = emissionMesh[tris.x].normal;

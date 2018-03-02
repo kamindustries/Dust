@@ -35,6 +35,7 @@ namespace Dust
         {
             Graphics.DrawMesh(mesh, transform.localToWorldMatrix, m_material, 0, null, 0, propertyBlock, true, true);
         }
+        
 
 
         public override void UpdatePropertyBlock()

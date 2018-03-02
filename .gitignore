@@ -6,7 +6,8 @@
 Assets/AssetStoreTools*
 Assets/3rdParty*
 Assets/Sandboxing*
-WIP*
+WIP/
+Extra/
 
 # Visual Studio 2015 cache directory
 /.vs/
