@@ -8,40 +8,39 @@ namespace Dust
 
         void Start ()
         {
-            if (DefaultMesh == null) DefaultMesh = new Mesh();
-            DefaultMesh.Clear();
-            Vector3 [] meshVerts = new Vector3[NumVertices];
-            int [] meshIndices = new int[NumVertices];
+            if (mesh == null) mesh = new Mesh();
+            mesh.Clear();
 
-            for (int i = 0; i < NumVertices; i++) {
+            Vector3 [] meshVerts = new Vector3[numVertices];
+            int [] meshIndices = new int[numVertices];
+
+            for (int i = 0; i < numVertices; i++) {
                 meshVerts[i] = Random.insideUnitSphere * 50f;
                 meshIndices[i] = i;
             }
 
             // Dummy mesh geometry for points
-            DefaultMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            DefaultMesh.vertices = meshVerts;
-            DefaultMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
-            DefaultMesh.RecalculateBounds();
-            DefaultMesh.UploadMeshData(true);
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.vertices = meshVerts;
+            mesh.SetIndices(meshIndices, MeshTopology.Points, 0);
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
 
-            MeshFilter mf = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
-            mf.hideFlags = HideFlags.HideInInspector;
-            mf.mesh = DefaultMesh;
+            meshFilter.mesh = mesh;
 
-            PropertyBlock.Clear();
+            propertyBlock.Clear();
         }
 
         public override void Draw() 
         {
-            Graphics.DrawMesh(DefaultMesh, transform.localToWorldMatrix, m_material, 0, null, 0, PropertyBlock, true, true);
+            Graphics.DrawMesh(mesh, transform.localToWorldMatrix, m_material, 0, null, 0, propertyBlock, true, true);
         }
 
 
         public override void UpdatePropertyBlock()
         {
-            PropertyBlock.SetBuffer("dataBuffer", Particles.ParticlesBuffer);
-            PropertyBlock.SetFloat("numParticles", (float)Particles.Emission);
+            propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
+            propertyBlock.SetFloat("numParticles", (float)particles.Emission);
         }
 
 

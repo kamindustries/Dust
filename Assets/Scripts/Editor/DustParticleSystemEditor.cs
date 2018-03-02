@@ -8,7 +8,7 @@ namespace Dust {
 	[CanEditMultipleObjects]
 	public class DustParticleSystemEditor : Editor {
 
-        SerializedProperty Compute;
+        SerializedProperty ParticleSystemKernel;
         SerializedProperty Material;
 
 		// Particles
@@ -26,7 +26,6 @@ namespace Dust {
 		// Shape
 		string[] _shape = new string[] {"Sphere", "Mesh Renderer"};
 		int _shapeIdx = 0;
-        SerializedProperty Emission;
         SerializedProperty InitialSpeed;
         SerializedProperty Jitter;
         SerializedProperty RandomizeDirection;
@@ -50,7 +49,7 @@ namespace Dust {
 
 		void OnEnable() 
 		{
-			Compute = serializedObject.FindProperty("ParticleSystemKernel");
+			ParticleSystemKernel = serializedObject.FindProperty("ParticleSystemKernel");
 			Material = serializedObject.FindProperty("ParticleMaterial");
 			
 			// Particles
@@ -64,7 +63,6 @@ namespace Dust {
 			GravityModifier = serializedObject.FindProperty("GravityModifier");
 
 			// Shape
-			Emission = serializedObject.FindProperty("Emission");
 			InitialSpeed = serializedObject.FindProperty("InitialSpeed");
 			Jitter = serializedObject.FindProperty("Jitter");
 			RandomizeDirection = serializedObject.FindProperty("RandomizeDirection");
@@ -84,9 +82,9 @@ namespace Dust {
 
 		public override void OnInspectorGUI()
 		{
-			var particles = target as DustParticleSystem;
+			var src = target as DustParticleSystem;
 
-			EditorGUILayout.PropertyField(Compute);
+			EditorGUILayout.PropertyField(ParticleSystemKernel);
 			EditorGUILayout.PropertyField(Material);
 
 			// Particles
@@ -98,9 +96,9 @@ namespace Dust {
 
 			// Velocity
 			EditorGUILayout.PropertyField(InheritVelocity);
-			_emitterVelocityIdx = particles.EmitterVelocity;
+			_emitterVelocityIdx = src.EmitterVelocity;
 			_emitterVelocityIdx = EditorGUILayout.Popup("Emitter Velocity", _emitterVelocityIdx, _emitterVelocity);
-			particles.EmitterVelocity = _emitterVelocityIdx;
+			src.EmitterVelocity = _emitterVelocityIdx;
 			EditorGUILayout.PropertyField(GravityModifier);
 
 			// Shape
@@ -109,9 +107,9 @@ namespace Dust {
 			headerStyle.fontStyle = FontStyle.Bold;
 			EditorGUILayout.LabelField("Shape", headerStyle);
 
-			_shapeIdx = particles.Shape;
+			_shapeIdx = src.Shape;
 			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
-			particles.Shape = _shapeIdx;
+			src.Shape = _shapeIdx;
 			switch(_shapeIdx) {
 				case 0:
 					EditorGUILayout.PropertyField(EmissionSize);
@@ -122,8 +120,8 @@ namespace Dust {
 					break;
 			}
 			EditorGUI.BeginChangeCheck();
-			particles.Emission = EditorGUILayout.IntSlider("Emission", particles.Emission, 0, particles.MaxVerts);
-			if (EditorGUI.EndChangeCheck()) { particles.UpdateKernelArgs(); }			
+				src.Emission = EditorGUILayout.IntSlider("Emission", src.Emission, 0, src.MaxVerts);
+			if (EditorGUI.EndChangeCheck()) { src.UpdateKernelArgs(); }			
 			EditorGUILayout.PropertyField(InitialSpeed);
 			EditorGUILayout.PropertyField(Jitter);
 			EditorGUILayout.PropertyField(RandomizeDirection);
@@ -136,8 +134,8 @@ namespace Dust {
 				EditorGUILayout.PropertyField(ColorByLife, true);
 				EditorGUILayout.PropertyField(ColorByVelocity, true);
 			if (EditorGUI.EndChangeCheck()) {
-				particles.ColorByLife.Update();
-				particles.ColorByVelocity.Update();
+				src.ColorByLife.Update();
+				src.ColorByVelocity.Update();
 			}
 
 			// Noise
@@ -148,11 +146,11 @@ namespace Dust {
 			headerStyle.fontStyle = FontStyle.Bold;
 			EditorGUILayout.LabelField("Noise", headerStyle);
 
-			_noiseTypeIdx = particles.NoiseType;
-			_noiseAmplitude = particles.NoiseAmplitude;
-        	_noiseScale = particles.NoiseScale;
-        	_noiseOffset = particles.NoiseOffset;
-        	_noiseOffsetSpeed = particles.NoiseOffsetSpeed;
+			_noiseTypeIdx = src.NoiseType;
+			_noiseAmplitude = src.NoiseAmplitude;
+        	_noiseScale = src.NoiseScale;
+        	_noiseOffset = src.NoiseOffset;
+        	_noiseOffsetSpeed = src.NoiseOffsetSpeed;
 
 			_noiseTypeIdx = EditorGUILayout.Popup("Noise Type", _noiseTypeIdx, _noiseType);
 			_noiseAmplitude = EditorGUILayout.Vector3Field("Noise Amplitude", _noiseAmplitude);
@@ -160,13 +158,13 @@ namespace Dust {
 			_noiseOffset = EditorGUILayout.Vector4Field("Noise Offset", _noiseOffset);
 			_noiseOffsetSpeed = EditorGUILayout.Vector4Field("Noise Offset Speed", _noiseOffsetSpeed);
 			
-			particles.NoiseType = _noiseTypeIdx;
-			particles.NoiseAmplitude = _noiseAmplitude;
-			particles.NoiseScale = _noiseScale;
-			particles.NoiseOffset = _noiseOffset;
-			particles.NoiseOffsetSpeed = _noiseOffsetSpeed;
+			src.NoiseType = _noiseTypeIdx;
+			src.NoiseAmplitude = _noiseAmplitude;
+			src.NoiseScale = _noiseScale;
+			src.NoiseOffset = _noiseOffset;
+			src.NoiseOffsetSpeed = _noiseOffsetSpeed;
 
-			EditorUtility.SetDirty(particles);
+			EditorUtility.SetDirty(src);
 
 			serializedObject.ApplyModifiedProperties();
 

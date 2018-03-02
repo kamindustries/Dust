@@ -4,6 +4,12 @@
 
 Shader "Dust/Pointcloud"
 {
+	Properties 
+	{
+		_testColor ("Test Color", Color) = (1,1,1,1)
+		_offset ("offset", Float) = 0
+	}
+
 	SubShader
 	{
 		Pass
@@ -25,7 +31,9 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
-			int numParticles;			
+			int numParticles;		
+			float4 _testColor;
+			float _offset;
 
 			struct v2f 
 			{
@@ -42,6 +50,7 @@ Shader "Dust/Pointcloud"
 			{
 				v2f o;
 				float3 worldPos = dataBuffer[id].pos;
+				worldPos.x += _offset;
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
 
 				// lighting
@@ -54,6 +63,7 @@ Shader "Dust/Pointcloud"
 				TRANSFER_SHADOW(o);
 
 				o.baseCd = dataBuffer[id].cd;
+				o.baseCd = _testColor;
 
 				o.metadata = fixed3(0,0,0);
 				if (id >= uint(numParticles)) o.metadata.r = 1;
@@ -87,6 +97,7 @@ Shader "Dust/Pointcloud"
 
 			StructuredBuffer<ParticleStruct> dataBuffer;
 			int numParticles;
+			float _offset;
 
 			struct v2f_shdw
 			{
@@ -98,6 +109,7 @@ Shader "Dust/Pointcloud"
 			{
 				v2f_shdw o;
 				float3 worldPos = dataBuffer[id].pos;
+				worldPos.x += _offset;
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
 				o.metadata = fixed3(0,0,0);
 				if (id >= uint(numParticles)) o.metadata.r = 1;

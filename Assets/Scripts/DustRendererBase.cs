@@ -9,12 +9,17 @@ namespace Dust
 
         public Material m_material;
 
-        public MaterialPropertyBlock PropertyBlock { get { return m_propertyBlock; } }
-        public Mesh DefaultMesh { get { return m_mesh; } set { m_mesh = value; } }
-        public DustParticleSystem Particles { get { return m_particleSystem; } }
-        public int NumVertices { get { return m_maxVertCount; } }
+        public Mesh mesh { get { return m_mesh; } set { m_mesh = value; } }
+        public GameObject child { get { return m_gameObject; } }
+        public MaterialPropertyBlock propertyBlock { get { return m_propertyBlock; } }
+        public MeshFilter meshFilter { get { return m_meshFilter; } }
+        public DustParticleSystem particles { get { return m_particleSystem; } }
+        public int numVertices { get { return m_maxVertCount; } }
+
 
         private Mesh m_mesh;
+        private GameObject m_gameObject;
+        private MeshFilter m_meshFilter;
         private MaterialPropertyBlock m_propertyBlock;
         private DustParticleSystem m_particleSystem;
         private const int m_maxVertCount = 1048576; 
@@ -23,8 +28,20 @@ namespace Dust
         {
             m_particleSystem = GetComponent<DustParticleSystem>();
             m_propertyBlock = new MaterialPropertyBlock();
+
+            m_gameObject = new GameObject();
+            m_gameObject.transform.parent = transform;
+            m_gameObject.hideFlags = HideFlags.HideInHierarchy;
+
+            m_meshFilter = m_gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
+            meshFilter.hideFlags = HideFlags.HideInInspector;
         }
         
+        void OnDisable() 
+        {
+            Destroy(m_gameObject);
+        }
+
         // Update is called once per frame
         void Update () 
         {
