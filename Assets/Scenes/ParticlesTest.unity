@@ -273,6 +273,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1282248677}
   - component: {fileID: 1282248676}
+  - component: {fileID: 1282248678}
   m_Layer: 0
   m_Name: Dust-Particles
   m_TagString: Untagged
@@ -387,6 +388,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1282248678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282248675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecb5bc0a9a3d07c4090a518952435937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_material: {fileID: 2100000, guid: 235a5501a8d25464fa9a91f635dfa448, type: 2}
 --- !u!1 &1825567955
 GameObject:
   m_ObjectHideFlags: 0

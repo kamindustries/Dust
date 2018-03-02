@@ -7,50 +7,12 @@ namespace Dust
     public class DustMeshEmitter
     {
         #region Public Properties
-        public MeshRenderer MeshRenderer
-        {
-            get
-            {
-                return m_meshRenderer;
-            }
-        }        
-
-        public ComputeBuffer MeshBuffer
-        {
-            get
-            {
-                return m_meshBuffer;
-            }
-        }
-
-        public ComputeBuffer MeshTrisBuffer
-        {
-            get
-            {
-                return m_meshTrisBuffer;
-            }
-        }
-        public Mesh Mesh
-        {
-            get
-            {
-                return m_mesh;
-            }
-        }
-        public int VertexCount
-        {
-            get
-            {
-                return m_mesh.vertexCount;
-            }
-        }
-        public int TriangleCount
-        {
-            get
-            {
-                return m_meshTrisCount;
-            }
-        }
+        public MeshRenderer MeshRenderer { get { return m_meshRenderer; } }        
+        public ComputeBuffer MeshBuffer { get { return m_meshBuffer; } }
+        public ComputeBuffer MeshTrisBuffer { get { return m_meshTrisBuffer; } }
+        public Mesh Mesh { get { return m_mesh; } }
+        public int VertexCount { get { return m_mesh.vertexCount; } }
+        public int TriangleCount { get { return m_meshTrisCount; } }
 
         public DustMeshEmitter(MeshRenderer meshRenderer)
         {

@@ -12,13 +12,6 @@ namespace Dust
     public class DustParticleSystem : MonoBehaviour
     {
         #region Public Properties
-        public Mesh ParticlesMesh 
-        {
-            get 
-            {
-                return m_particlesMesh;
-            }
-        }
         public ComputeShader ParticleSystemKernel;
         public Material ParticleMaterial;
         
@@ -39,6 +32,10 @@ namespace Dust
         [Range(0,m_maxVertCount)]
         public int Emission = 65000;
         public float InitialSpeed = 0f;
+        [Range(0,1)]
+        public float Jitter = 0f;
+        [Range(0,1)]
+        public float RandomizeDirection = 0f;
         public Vector3 EmissionSize = new Vector3(1f,1f,1f);
         [Range(0,1)]
         public float ScatterVolume = 0f;
@@ -57,10 +54,14 @@ namespace Dust
         public Vector4 NoiseOffset = new Vector4(0f,0f,0f,0f);
         public Vector4 NoiseOffsetSpeed = new Vector4(0f,0f,0f,0f);
         #endregion
+
+        #region Getters
+        public ComputeBuffer ParticlesBuffer { get { return m_particlesBuffer; } }
+        public int MaxVerts { get { return m_maxVertCount; } }
+        #endregion
         
         #region Private Properties
         private int m_kernel;
-        private Mesh m_particlesMesh;
         private ComputeBuffer m_particlesBuffer;
         private ComputeBuffer m_kernelArgs;
         private int[] m_kernelArgsLocal;
@@ -95,13 +96,10 @@ namespace Dust
             Dispatch();
         }
 
-        void Update() 
-        {
-            ParticleMaterial.SetBuffer("dataBuffer", m_particlesBuffer);
-            ParticleMaterial.SetInt("numParticles", Emission);
-            // ParticleMaterial.SetPass(0);
-            Graphics.DrawMesh(m_particlesMesh, transform.localToWorldMatrix, ParticleMaterial, 0, null, 0, null, true, true);
-        }
+        // void Update() 
+        // {
+
+        // }
 
         void OnDisable()
         {
@@ -155,6 +153,8 @@ namespace Dust
             ParticleSystemKernel.SetVector("initialVelocityDir", m_initialVelocityDir);
             ParticleSystemKernel.SetVector("gravityIn", Physics.gravity);
             ParticleSystemKernel.SetFloat("gravityModifier", GravityModifier);
+            ParticleSystemKernel.SetFloat("jitter", Jitter);
+            ParticleSystemKernel.SetFloat("randomizeDirection", RandomizeDirection);
             ParticleSystemKernel.SetInt("emissionShape", Shape);
             ParticleSystemKernel.SetInt("emission", Emission);
             ParticleSystemKernel.SetVector("emissionSize", EmissionSize);
@@ -167,7 +167,7 @@ namespace Dust
             ParticleSystemKernel.SetVector("noiseScale", NoiseScale);
             ParticleSystemKernel.SetVector("noiseOffset", NoiseOffset);
             ParticleSystemKernel.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
-            if (EmissionMeshRenderer) {
+            if (m_meshEmitter != null) {
                 ParticleSystemKernel.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
                 ParticleSystemKernel.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
                 ParticleSystemKernel.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
@@ -183,19 +183,14 @@ namespace Dust
             m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
             m_particlesBuffer = new ComputeBuffer(m_maxVertCount, sizeof(float) * numElements); //float3 pos, vel, cd; float age
 
-            m_particlesMesh = new Mesh();
             m_kernelArgsLocal = new int[3];
             float[] particlesTemp = new float[m_maxVertCount * numElements];
-            Vector3 [] meshVerts = new Vector3[m_maxVertCount];
-            int [] meshIndices = new int[m_maxVertCount];
 
             UpdateKernelArgs();
 
             ParticleSystemKernel.SetBuffer(m_kernel, "kernelArgs", m_kernelArgs);
 
             for (int i = 0; i < m_maxVertCount; i++) {
-                meshVerts[i] = Random.insideUnitSphere * 50f;
-                meshIndices[i] = i;
                 for (int j = 0; j < numElements; j++) {
                     particlesTemp[(i*numElements)+j] = 0f;
                 }
@@ -204,15 +199,6 @@ namespace Dust
             m_particlesBuffer.SetData(particlesTemp);
             ParticleSystemKernel.SetBuffer(m_kernel, "output", m_particlesBuffer);
 
-            // Dummy mesh geometry for points
-            m_particlesMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            m_particlesMesh.vertices = meshVerts;
-            m_particlesMesh.SetIndices(meshIndices, MeshTopology.Points, 0);
-            m_particlesMesh.RecalculateBounds();
-            MeshFilter mf = gameObject.AddComponent(typeof(MeshFilter)) as MeshFilter;
-            mf.hideFlags = HideFlags.HideInInspector;
-            mf.mesh = m_particlesMesh;
-
             // Create color ramp textures
             ColorByLife.Setup();
             ColorByVelocity.Setup();
@@ -220,14 +206,13 @@ namespace Dust
             ParticleSystemKernel.SetTexture(m_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             // Set up mesh emitter
-            if (EmissionMeshRenderer) {
+            if (EmissionMeshRenderer != null) {
                 m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 m_meshEmitter.Update();
                 
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMesh", m_meshEmitter.MeshBuffer);
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
             }
-
         }
 
         public void UpdateKernelArgs()
@@ -245,7 +230,7 @@ namespace Dust
         {
             m_particlesBuffer.Release();
             m_kernelArgs.Release();
-            if (EmissionMeshRenderer) {
+            if (m_meshEmitter != null) {
                 m_meshEmitter.ReleaseBuffers();
             }
         }

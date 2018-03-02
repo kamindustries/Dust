@@ -30,6 +30,8 @@ float inheritVelocityMult;
 float3 initialVelocityDir;
 float3 gravityIn;
 float gravityModifier;
+float jitter;
+float randomizeDirection;
 
 int emissionShape;
 int emission;
@@ -70,7 +72,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	float r1 = rand(float2(id.x+.1, id.y));
 	float r2 = rand(float2(id.x+.2, id.y));
 	float r3 = rand(float2(id.x+0, id.y));
-	float r4 = rand(float2(id.x+fixedTime, id.y));
+	float r4 = rand(float2(id.x+fixedTime, id.x));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
 
 	// Noise
@@ -119,8 +121,9 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 		{
 			// Procedural sphere
 			case 0:
-				pos = origin.xyz + (randSphere * emissionSize);
 				vel = randSphere * initialSpeed * dt;
+				pos = origin.xyz + (randSphere * emissionSize);
+				pos += vel * r1 * jitter;
 				break;
 
 			// Mesh emission
@@ -130,14 +133,20 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 
 				// Get the 3 id's that make up that triangle and generate a random point between them
 				int3 tris = int3(emissionMeshTris[randId+0], emissionMeshTris[randId+1], emissionMeshTris[randId+2]);
-				float4 newPos = float4(bayesianCoordinate(emissionMesh, tris, float2(r1,r2)), 1.);
+				pos = bayesianCoordinate(emissionMesh, tris, float2(r1,r2));
+				
+				// Velocity direction is the first vertex in the triangle...lazy
+				vel = emissionMesh[tris.x].normal;
+				vel = lerp(vel, normalize(vel + randSphere), randomizeDirection);
+				vel *= initialSpeed * dt;
 
-				newPos = mul(emissionMeshMatrix, newPos);
-				pos = newPos.xyz;
-				vel = emissionMesh[tris.x].normal * initialSpeed * dt;
+				// Jitter
+				pos += vel * r1 * jitter;
+				pos = mul(emissionMeshMatrix, float4(pos, 1.)).xyz;
 				break;
 		}
 		
+		// Inherit velocity from parent rigidbody or transform
 		vel += initialVelocityDir * inheritVelocityMult * dt;
 
 		float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds

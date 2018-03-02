@@ -25,8 +25,7 @@ Shader "Dust/Pointcloud"
 			#include "DustParticleSystemCommon.cginc"
 			
 			StructuredBuffer<ParticleStruct> dataBuffer;
-			int numParticles;
-			
+			int numParticles;			
 
 			struct v2f 
 			{

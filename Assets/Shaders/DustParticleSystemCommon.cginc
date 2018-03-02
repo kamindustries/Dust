@@ -58,19 +58,21 @@ float2 fit(float2 val, float2 inMin, float2 inMax, float2 outMin, float2 outMax)
     return ((outMax - outMin) * (val - inMin) / (inMax - inMin)) + outMin;
 }
 
+float3 bayesian(float3 a, float3 b, float3 c, float2 random) {
+    float r = random.x;
+    float s = random.y;
+    if (r + s >= 1.0) {
+        r = 1.-r;
+        s = 1.-s;
+    }
+    return a + ((b-a)*r) + ((c-a)*s);
+}
+
 // Return a position within a triangle
 float3 bayesianCoordinate(RWStructuredBuffer<MeshStruct> vertices, int3 triangles, float2 random) 
 {
     float3 a = vertices[triangles.x].pos;
     float3 b = vertices[triangles.y].pos;
     float3 c = vertices[triangles.z].pos;
-    float r = random.x;
-    float s = random.y;
-
-    if (r + s >= 1.0) {
-        r = 1.-r;
-        s = 1.-s;
-    }
-
-    return a + ((b-a)*r) + ((c-a)*s);
+    return bayesian(a, b, c, random.xy);
 }

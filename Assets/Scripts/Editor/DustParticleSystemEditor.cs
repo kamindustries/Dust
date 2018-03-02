@@ -28,6 +28,8 @@ namespace Dust {
 		int _shapeIdx = 0;
         SerializedProperty Emission;
         SerializedProperty InitialSpeed;
+        SerializedProperty Jitter;
+        SerializedProperty RandomizeDirection;
         SerializedProperty EmissionSize;
 		SerializedProperty ScatterVolume;
         SerializedProperty EmissionMeshRenderer;
@@ -64,6 +66,8 @@ namespace Dust {
 			// Shape
 			Emission = serializedObject.FindProperty("Emission");
 			InitialSpeed = serializedObject.FindProperty("InitialSpeed");
+			Jitter = serializedObject.FindProperty("Jitter");
+			RandomizeDirection = serializedObject.FindProperty("RandomizeDirection");
 			EmissionSize = serializedObject.FindProperty("EmissionSize");
 			ScatterVolume = serializedObject.FindProperty("ScatterVolume");
 			EmissionMeshRenderer = serializedObject.FindProperty("EmissionMeshRenderer");
@@ -108,13 +112,7 @@ namespace Dust {
 			_shapeIdx = particles.Shape;
 			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
 			particles.Shape = _shapeIdx;
-			EditorGUI.BeginChangeCheck();
-				EditorGUILayout.PropertyField(Emission);
-			if (EditorGUI.EndChangeCheck()) {
-				particles.UpdateKernelArgs();
-			}			
-			EditorGUILayout.PropertyField(InitialSpeed);
-			switch(_shapeIdx){
+			switch(_shapeIdx) {
 				case 0:
 					EditorGUILayout.PropertyField(EmissionSize);
 					EditorGUILayout.PropertyField(ScatterVolume);
@@ -123,6 +121,13 @@ namespace Dust {
 					EditorGUILayout.PropertyField(EmissionMeshRenderer, new GUIContent("Mesh Renderer"));
 					break;
 			}
+			EditorGUI.BeginChangeCheck();
+			particles.Emission = EditorGUILayout.IntSlider("Emission", particles.Emission, 0, particles.MaxVerts);
+			if (EditorGUI.EndChangeCheck()) { particles.UpdateKernelArgs(); }			
+			EditorGUILayout.PropertyField(InitialSpeed);
+			EditorGUILayout.PropertyField(Jitter);
+			EditorGUILayout.PropertyField(RandomizeDirection);
+
 
 			// Color
 			EditorGUILayout.PropertyField(StartColor);
