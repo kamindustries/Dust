@@ -150,8 +150,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 				// Velocity direction is the first vertex in the triangle...lazy
 				float3 dir = emissionMesh[tris.x].normal;
 				dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
-				dir *= initialSpeed * dt;
-				vel = dir;
+				vel = dir * initialSpeed * dt;
 
 				// Jitter
 				pos += dir * dt * r1 * jitter;

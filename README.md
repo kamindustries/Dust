@@ -1,24 +1,35 @@
 # Dust
-Dust is a GPU-based particle simulation and rendering system for Unity. All simulation is done in world space.
+Dust is a GPU-based particle simulation and rendering system for Unity.
 
 ### Usage
-Add the DustParticleSystem component to a Game Object and press play.    
+Add the `DustParticleSystem` component to a Game Object and a DustRenderer, either `DustPointRenderer` or `DustInstanceRenderer`.    
+
+All simulation is done in world space.   
 
 ### Requirements
 * \>=Unity 2017.3
 * GPU with compute shader support
 
 ### Features
-* Inherit velocity from either a parent Rigidboy or Transform node
+* Rendering modes:
+    * Point cloud
+    * Mesh instancing
 * Emission shapes:
     - Sphere
     - Mesh renderer
-* Color by life and by velocity gradients
 * 2D, 3D, 4D animated noise
+* Color by life and by velocity gradients
 * Mass, momentum, and lifespan random value range
 * Cast- and self-shadowing
+* Inherit velocity Rigidboy or Transform component
+* Align to direction
+
+### Description
+
+The particle system kernel handles simulation state via a structured buffer containing several attributes. Structures can be found in `DustParticleSystemCommon.cginc`. Rendering components send the particle system buffer to shaders for rendering. Rendering components can be stacked on the same game object for layering effects.
 
 ### To Do
+* Depth buffer collision
 * Rotation over lifetime + by speed
 * Velocity over lifetime
 * Size over lifetime
@@ -28,9 +39,7 @@ Add the DustParticleSystem component to a Game Object and press play.
 * Rendering modes:
     - Sprite
     - Trails
-    - Instanced
 * Optimization:
-    - Precompute random fields
-    - Precompute noise if not animated (and at lower resolution?)
-* Depth buffer collision
-* Switch to Renderer.SetPropertyBlock for setting uniforms
+    - Precompute static random fields
+    - Make noise a separate kernel, static whenever possble
+* Switch to property block for renderer

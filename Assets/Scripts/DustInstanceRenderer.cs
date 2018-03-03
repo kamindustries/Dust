@@ -14,6 +14,13 @@ namespace Dust
         public bool ReceiveShadows = true;
 
         private ComputeBuffer argsBuffer;
+        private uint _instanceCount
+        {
+            get
+            {
+                return (uint)Mathf.Min(InstanceCount, particles.Emission);
+            }
+        }
 
         // num indices/instance, num instances, start index, start vertex, start instance
         private uint[] args = new uint[5] { 0, 0, 0, 0, 0 }; 
@@ -30,8 +37,9 @@ namespace Dust
             if (argsBuffer != null) argsBuffer.Release();
             argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             uint numIndices = (mesh != null) ? (uint)mesh.GetIndexCount(0) : 0;
+
             args[0] = numIndices;
-            args[1] = (uint)Mathf.Min(InstanceCount, particles.Emission);
+            args[1] = _instanceCount;
             argsBuffer.SetData(args);
         }
 
@@ -44,12 +52,13 @@ namespace Dust
         {
             propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
             propertyBlock.SetVector("_Scale", Scale);
-            if (InstanceCount != args[1]) {
-                args[1] = (uint)Mathf.Min(InstanceCount, particles.Emission);
+            if (args[1] != _instanceCount) {
+                args[1] = _instanceCount;
                 argsBuffer.SetData(args);
             }
             propertyBlock.SetFloat("_NumInstances", InstanceCount);
             propertyBlock.SetFloat("_NumParticles", particles.Emission);
+
 
         }
 

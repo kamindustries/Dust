@@ -9,7 +9,6 @@ namespace Dust {
 	public class DustParticleSystemEditor : Editor {
 
         SerializedProperty ParticleSystemKernel;
-        SerializedProperty Material;
 
 		// Particles
         SerializedProperty Mass;
@@ -56,7 +55,6 @@ namespace Dust {
 		void OnEnable() 
 		{
 			ParticleSystemKernel = serializedObject.FindProperty("ParticleSystemKernel");
-			Material = serializedObject.FindProperty("ParticleMaterial");
 			
 			// Particles
 			Mass = serializedObject.FindProperty("Mass");
@@ -95,7 +93,6 @@ namespace Dust {
 			var src = target as DustParticleSystem;
 
 			EditorGUILayout.PropertyField(ParticleSystemKernel);
-			EditorGUILayout.PropertyField(Material);
 
 			// Particles
 			EditorGUILayout.PropertyField(Mass);

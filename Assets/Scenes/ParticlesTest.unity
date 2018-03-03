@@ -272,8 +272,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 1282248677}
-  - component: {fileID: 1282248676}
   - component: {fileID: 1282248678}
+  - component: {fileID: 1282248676}
   m_Layer: 0
   m_Name: Dust-Particles
   m_TagString: Untagged
@@ -289,29 +289,54 @@ MonoBehaviour:
   m_GameObject: {fileID: 1282248675}
   m_Enabled: 1
   m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecb5bc0a9a3d07c4090a518952435937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_material: {fileID: 2100000, guid: 235a5501a8d25464fa9a91f635dfa448, type: 2}
+--- !u!4 &1282248677
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282248675}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1282248678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282248675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b689a2c4571cf643ad0e2c28484c454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ParticleSystemKernel: {fileID: 7200000, guid: ca8315c68740d4c4b9b9a1f6f842c888,
     type: 3}
-  ParticleMaterial: {fileID: 2100000, guid: 235a5501a8d25464fa9a91f635dfa448, type: 2}
   Mass: {x: 0.5, y: 0.5}
   Momentum: {x: 0.95, y: 0.95}
-  Lifespan: {x: 1, y: 2}
+  Lifespan: {x: 0.5, y: 1}
+  StartSize: {x: 1, y: 1, z: 1}
+  StartRotation: {x: 0, y: 0, z: 0}
   PreWarmFrames: 0
-  InheritVelocity: 2
+  InheritVelocity: 0
   EmitterVelocity: 0
-  GravityModifier: 1
+  GravityModifier: 0
   Shape: 0
-  Emission: 330171
-  InitialSpeed: 1
+  Emission: 65000
+  InitialSpeed: 0
   Jitter: 0
   RandomizeDirection: 0
   EmissionSize: {x: 1, y: 1, z: 1}
   ScatterVolume: 0
   EmissionMeshRenderer: {fileID: 0}
   AlignToDirection: 0
-  StartRotation: {x: 0, y: 0, z: 0}
   RotationOverLifetime: 0
   StartColor: {r: 1, g: 1, b: 1, a: 1}
   ColorByLife:
@@ -377,34 +402,9 @@ MonoBehaviour:
     Range: 1
   NoiseType: 1
   NoiseAmplitude: {x: 0, y: 0, z: 0}
-  NoiseScale: {x: 0.5, y: 0.5, z: 0.5}
+  NoiseScale: {x: 1, y: 1, z: 1}
   NoiseOffset: {x: 0, y: 0, z: 0, w: 0}
-  NoiseOffsetSpeed: {x: 0, y: 0.2, z: 0, w: 0}
---- !u!4 &1282248677
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1282248675}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1282248678
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1282248675}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ecb5bc0a9a3d07c4090a518952435937, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_material: {fileID: 2100000, guid: 235a5501a8d25464fa9a91f635dfa448, type: 2}
+  NoiseOffsetSpeed: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &1825567955
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,14 +13,12 @@ namespace Dust
     {
         #region Public Properties
         public ComputeShader ParticleSystemKernel;
-        public Material ParticleMaterial;
-        
-        [Space(10)]
+
         [Header("Particles")]
         public Vector2 Mass = new Vector2(0.5f, 0.5f);
         public Vector2 Momentum = new Vector2(0.95f, 0.95f);
-        public Vector2 Lifespan = new Vector2(5f, 5f);
-        public Vector3 StartSize = new Vector3(0f,0f,0f);
+        public Vector2 Lifespan = new Vector2(.5f, 1f);
+        public Vector3 StartSize = new Vector3(1f,1f,1f);
         public Vector3 StartRotation = new Vector3(0f,0f,0f);
         public int PreWarmFrames = 0;
 
@@ -34,7 +32,7 @@ namespace Dust
         [Range(0,m_maxVertCount)]
         public int Emission = 65000;
         public float InitialSpeed = 0f;
-        [Range(0,1)]
+        // [Range(0,1)]
         public float Jitter = 0f;
         [Range(0,1)]
         public float RandomizeDirection = 0f;
@@ -218,13 +216,13 @@ namespace Dust
             ParticleSystemKernel.SetTexture(m_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             // Set up mesh emitter
-            // if (EmissionMeshRenderer != null) {
+            if (EmissionMeshRenderer != null) {
                 m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 m_meshEmitter.Update();
                 
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMesh", m_meshEmitter.MeshBuffer);
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
-            // }
+            }
 
             Debug.Log("Created buffers");
 
