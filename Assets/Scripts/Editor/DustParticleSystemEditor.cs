@@ -15,6 +15,8 @@ namespace Dust {
         SerializedProperty Mass;
         SerializedProperty Momentum;
         SerializedProperty Lifespan;
+        SerializedProperty StartSize;
+        SerializedProperty StartRotation;
         SerializedProperty PreWarmFrames;
 
 		// Velocity
@@ -33,6 +35,10 @@ namespace Dust {
 		SerializedProperty ScatterVolume;
         SerializedProperty EmissionMeshRenderer;
 
+		// Rotation
+        SerializedProperty AlignToDirection;
+        SerializedProperty RotationOverLifetime;
+		
 		// Color
         SerializedProperty StartColor;
         SerializedProperty ColorByLife;
@@ -56,6 +62,8 @@ namespace Dust {
 			Mass = serializedObject.FindProperty("Mass");
 			Momentum = serializedObject.FindProperty("Momentum");
 			Lifespan = serializedObject.FindProperty("Lifespan");
+			StartSize = serializedObject.FindProperty("StartSize");
+			StartRotation = serializedObject.FindProperty("StartRotation");
 			PreWarmFrames = serializedObject.FindProperty("PreWarmFrames");
 
 			// Velocity
@@ -70,14 +78,16 @@ namespace Dust {
 			ScatterVolume = serializedObject.FindProperty("ScatterVolume");
 			EmissionMeshRenderer = serializedObject.FindProperty("EmissionMeshRenderer");
 
+			// Rotation
+			AlignToDirection = serializedObject.FindProperty("AlignToDirection");
+			RotationOverLifetime = serializedObject.FindProperty("RotationOverLifetime");
+
 			// Color
 			StartColor = serializedObject.FindProperty("StartColor");
 			ColorByLife = serializedObject.FindProperty("ColorByLife");
 			ColorByVelocity = serializedObject.FindProperty("ColorByVelocity");
 			
 			// Noise
-			
-
 		}
 
 		public override void OnInspectorGUI()
@@ -91,6 +101,8 @@ namespace Dust {
 			EditorGUILayout.PropertyField(Mass);
 			EditorGUILayout.PropertyField(Momentum);
 			EditorGUILayout.PropertyField(Lifespan);
+			EditorGUILayout.PropertyField(StartSize);
+			EditorGUILayout.PropertyField(StartRotation);
 			EditorGUILayout.PropertyField(PreWarmFrames);
 
 
@@ -126,6 +138,9 @@ namespace Dust {
 			EditorGUILayout.PropertyField(Jitter);
 			EditorGUILayout.PropertyField(RandomizeDirection);
 
+			// Rotation
+			EditorGUILayout.PropertyField(AlignToDirection);
+			EditorGUILayout.PropertyField(RotationOverLifetime);
 
 			// Color
 			EditorGUILayout.PropertyField(StartColor);

@@ -20,6 +20,8 @@ namespace Dust
         public Vector2 Mass = new Vector2(0.5f, 0.5f);
         public Vector2 Momentum = new Vector2(0.95f, 0.95f);
         public Vector2 Lifespan = new Vector2(5f, 5f);
+        public Vector3 StartSize = new Vector3(0f,0f,0f);
+        public Vector3 StartRotation = new Vector3(0f,0f,0f);
         public int PreWarmFrames = 0;
 
         [Header("Velocity")]
@@ -40,6 +42,10 @@ namespace Dust
         [Range(0,1)]
         public float ScatterVolume = 0f;
         public MeshRenderer EmissionMeshRenderer;
+
+        [Header("Rotation")]
+        public bool AlignToDirection = false;
+        public float RotationOverLifetime = 0f;
 
         [Header("Color")]
         [ColorUsageAttribute(true,true,0,8,.125f,3)]
@@ -64,7 +70,7 @@ namespace Dust
         private int m_kernel;
         private ComputeBuffer m_particlesBuffer;
         private ComputeBuffer m_kernelArgs;
-        private int[] m_kernelArgsLocal;
+        private int[] m_kernelArgsLocal = new int[3];
     
         private Vector3 m_origin;
         private Vector3 m_initialVelocityDir;
@@ -79,7 +85,7 @@ namespace Dust
         void Start()
         {
             m_kernel = ParticleSystemKernel.FindKernel("DustParticleSystemKernel");
-            CreateBuffers();            
+            CreateBuffers();
             UpdateComputeUniforms();
 
             // Prewarm the system
@@ -96,11 +102,6 @@ namespace Dust
             Dispatch();
         }
 
-        // void Update() 
-        // {
-
-        // }
-
         void OnDisable()
         {
             ReleaseBuffers();
@@ -108,6 +109,7 @@ namespace Dust
 
         private void Dispatch()
         {
+            // if (m_kernelArgs == null) CreateBuffers();
             ParticleSystemKernel.DispatchIndirect(m_kernel, m_kernelArgs);
         }
 
@@ -145,23 +147,33 @@ namespace Dust
 
             ParticleSystemKernel.SetFloat("dt", Time.fixedDeltaTime);
             ParticleSystemKernel.SetFloat("fixedTime", Time.fixedTime);
+            // Particles
             ParticleSystemKernel.SetVector("origin", m_origin);
             ParticleSystemKernel.SetVector("massNew", Mass);
             ParticleSystemKernel.SetVector("momentumNew", Momentum);
             ParticleSystemKernel.SetVector("lifespanNew", Lifespan);
+			// Velocity
             ParticleSystemKernel.SetFloat("inheritVelocityMult", InheritVelocity);
             ParticleSystemKernel.SetVector("initialVelocityDir", m_initialVelocityDir);
             ParticleSystemKernel.SetVector("gravityIn", Physics.gravity);
             ParticleSystemKernel.SetFloat("gravityModifier", GravityModifier);
             ParticleSystemKernel.SetFloat("jitter", Jitter);
+			// Shape
             ParticleSystemKernel.SetFloat("randomizeDirection", RandomizeDirection);
             ParticleSystemKernel.SetInt("emissionShape", Shape);
             ParticleSystemKernel.SetInt("emission", Emission);
             ParticleSystemKernel.SetVector("emissionSize", EmissionSize);
             ParticleSystemKernel.SetFloat("initialSpeed", InitialSpeed);
             ParticleSystemKernel.SetFloat("scatterVolume", ScatterVolume);
+			// Rotation
+            ParticleSystemKernel.SetBool("alignToDirection", AlignToDirection);
+            ParticleSystemKernel.SetVector("startSize", StartSize);
+            ParticleSystemKernel.SetVector("startRotation", StartRotation);
+            ParticleSystemKernel.SetFloat("rotationOverLifetime", RotationOverLifetime);
+			// Color
             ParticleSystemKernel.SetVector("startColor", StartColor);
             ParticleSystemKernel.SetFloat("velocityColorRange", ColorByVelocity.Range);
+			// Noise
             ParticleSystemKernel.SetInt("noiseType", NoiseType);
             ParticleSystemKernel.SetVector("noiseAmplitude", NoiseAmplitude);
             ParticleSystemKernel.SetVector("noiseScale", NoiseScale);
@@ -179,11 +191,11 @@ namespace Dust
         private void CreateBuffers()
         {
             // Allocate
-            int numElements = 14; //float4 cd; float3 pos, vel; float age, lifespan, mass, momentum
+            int numElements = 18; //float4 cd; float3 pos, vel, scale; float age, lifespan, mass, momentum, id
+            numElements += 9; // float3x3 rot
             m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
             m_particlesBuffer = new ComputeBuffer(m_maxVertCount, sizeof(float) * numElements); //float3 pos, vel, cd; float age
 
-            m_kernelArgsLocal = new int[3];
             float[] particlesTemp = new float[m_maxVertCount * numElements];
 
             UpdateKernelArgs();
@@ -206,18 +218,22 @@ namespace Dust
             ParticleSystemKernel.SetTexture(m_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             // Set up mesh emitter
-            if (EmissionMeshRenderer != null) {
+            // if (EmissionMeshRenderer != null) {
                 m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 m_meshEmitter.Update();
                 
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMesh", m_meshEmitter.MeshBuffer);
                 ParticleSystemKernel.SetBuffer(m_kernel, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
-            }
+            // }
+
+            Debug.Log("Created buffers");
+
         }
 
         public void UpdateKernelArgs()
         {
             int groupSize = (int)Mathf.Ceil(Mathf.Sqrt(Emission)/16f);
+            if (m_kernelArgsLocal.Length < 3) m_kernelArgsLocal = new int[3];
 
             m_kernelArgsLocal[0] = groupSize;
             m_kernelArgsLocal[1] = groupSize;

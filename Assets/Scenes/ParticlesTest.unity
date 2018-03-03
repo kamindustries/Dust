@@ -303,11 +303,16 @@ MonoBehaviour:
   EmitterVelocity: 0
   GravityModifier: 1
   Shape: 0
-  Emission: 1048576
+  Emission: 330171
   InitialSpeed: 1
+  Jitter: 0
+  RandomizeDirection: 0
   EmissionSize: {x: 1, y: 1, z: 1}
   ScatterVolume: 0
   EmissionMeshRenderer: {fileID: 0}
+  AlignToDirection: 0
+  StartRotation: {x: 0, y: 0, z: 0}
+  RotationOverLifetime: 0
   StartColor: {r: 1, g: 1, b: 1, a: 1}
   ColorByLife:
     Gradient:

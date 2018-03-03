@@ -24,6 +24,8 @@ float fixedTime; //seconds
 float3 origin;
 float2 massNew;
 float2 momentumNew;
+float3 startSize;
+float3 startRotation;
 float2 lifespanNew;
 
 float inheritVelocityMult;
@@ -38,6 +40,9 @@ int emission;
 float initialSpeed;
 float3 emissionSize;
 float scatterVolume;
+
+bool alignToDirection;
+float rotationOverLifetime;
 
 float4 startColor;
 float velocityColorRange;
@@ -67,6 +72,9 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	float age = output[idx].age;
 	float mass = output[idx].mass;
 	float momentum = output[idx].momentum;
+	float uniqueId = output[idx].id;
+	float3 scale = output[idx].scale;
+	float3x3 rot = output[idx].rot;
 
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
@@ -117,6 +125,7 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 	// Spawn new particles
 	if (age <= 0.0) 
 	{
+		uniqueId = r4;
 		[call] switch(emissionShape) 
 		{
 			// Procedural sphere
@@ -133,18 +142,19 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 
 				// Get the 3 id's that make up that triangle and generate a random point between them
 				int3 tris = int3(emissionMeshTris[randId+0], emissionMeshTris[randId+1], emissionMeshTris[randId+2]);
-				float3 a = output[tris.x].pos;
-				float3 b = output[tris.y].pos;
-				float3 c = output[tris.z].pos;
+				float3 a = emissionMesh[tris.x].pos;
+				float3 b = emissionMesh[tris.y].pos;
+				float3 c = emissionMesh[tris.z].pos;
 				pos = bayesianCoordinate(a, b, c, float2(r1,r2));
 				
 				// Velocity direction is the first vertex in the triangle...lazy
-				vel = emissionMesh[tris.x].normal;
-				vel = lerp(vel, normalize(vel + randSphere), randomizeDirection);
-				vel *= initialSpeed * dt;
+				float3 dir = emissionMesh[tris.x].normal;
+				dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
+				dir *= initialSpeed * dt;
+				vel = dir;
 
 				// Jitter
-				pos += vel * r1 * jitter;
+				pos += dir * dt * r1 * jitter;
 				pos = mul(emissionMeshMatrix, float4(pos, 1.)).xyz;
 				break;
 		}
@@ -160,9 +170,20 @@ void DustParticleSystemKernel(uint3 id : SV_DispatchThreadID)
 		output[idx].momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
 	}
 
+	if (alignToDirection) {
+		rot = rotateToVector(vel);
+	}
+	else {
+		rot = IDENTITY3x3;
+	}
+	scale = startSize;
+
 	output[idx].pos = pos;
 	output[idx].vel = vel;
 	output[idx].cd = cd;
 	output[idx].age = age;
+	output[idx].id = uniqueId;
+	output[idx].scale = scale;
+	output[idx].rot = rot;
 
 }

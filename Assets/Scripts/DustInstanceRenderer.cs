@@ -23,7 +23,7 @@ namespace Dust
             if (mesh == null) mesh = new Mesh();
             mesh.Clear();
             mesh = InstancedMesh;
-            mesh.RecalculateBounds();
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 10000);
 
             propertyBlock.Clear();
 
@@ -50,6 +50,7 @@ namespace Dust
             }
             propertyBlock.SetFloat("_NumInstances", InstanceCount);
             propertyBlock.SetFloat("_NumParticles", particles.Emission);
+
         }
 
         public void OnDestroy() 

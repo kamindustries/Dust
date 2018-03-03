@@ -1,5 +1,5 @@
 #define PI 3.14159265359
-
+#define IDENTITY3x3 float3x3(1,0,0,0,1,0,0,0,1)
 // --------------------------------------------------
 // Structures
 // --------------------------------------------------
@@ -14,6 +14,9 @@ struct ParticleStruct
     float lifespan;
     float mass;
     float momentum;
+    float id; //for unique instancing
+    float3 scale;
+    float3x3 rot;
 };
 
 struct MeshStruct
@@ -65,4 +68,28 @@ float3 bayesianCoordinate(float3 a, float3 b, float3 c, float2 random) {
         s = 1.-s;
     }
     return a + ((b-a)*r) + ((c-a)*s);
+}
+
+float3x3 rotateToVector(float3 dir) 
+{
+    float3 axis = normalize(dir);
+	axis.z *= -1.;
+	
+	float xz = length(axis.xz);
+	float xyz = 1.;
+	float x = sqrt(1. - axis.y * axis.y);
+	float cosry = axis.x / xz;
+	float sinry = axis.z / xz;
+	float cosrz = x / xyz;
+	float sinrz = axis.y / xyz;
+
+	float3x3 maty = float3x3(cosry,	0, sinry,
+							0,		1, 0,
+							-sinry,	0, cosry );
+
+	float3x3 matz = float3x3(cosrz , -sinrz,	0,
+							sinrz, 	cosrz,	0,
+							0,		0,		1 );
+
+	return mul(maty, matz);
 }
