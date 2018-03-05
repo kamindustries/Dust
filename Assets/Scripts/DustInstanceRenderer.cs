@@ -62,9 +62,9 @@ namespace Dust
 
         }
 
-        public void OnDestroy() 
+        void OnDestroy() 
         {
-            argsBuffer.Release();
+            if (argsBuffer != null) argsBuffer.Release();
         }
 
     }

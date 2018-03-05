@@ -35,16 +35,13 @@ Shader "Dust/Instanced"
 			float3 _Scale;
 			int _NumInstances;
 			int _NumParticles;
+
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-				StructuredBuffer<ParticleStruct> dataBuffer;
+				StructuredBuffer<DustParticle> dataBuffer;
 
 				uint GetID() 
 				{
-					uint i = unity_InstanceID;
-					if (_NumParticles > _NumInstances) {
-						return uint(rand(float2(i + dataBuffer[i].id, i + .5))  * _NumInstances);
-					}
-					else return i;
+					return unity_InstanceID;
 				}
 			#endif
 				
@@ -53,12 +50,10 @@ Shader "Dust/Instanced"
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 				uint id = GetID();
 				float4 pos = float4(v.vertex.xyz * dataBuffer[id].scale, 1.);
-				v.vertex.xyz = mul(dataBuffer[id].rot, pos);
-				v.normal = mul(dataBuffer[id].rot, v.normal);
+				v.vertex.xyz = mul(dataBuffer[id].rot, pos ).xyz;
+				v.normal = mul(dataBuffer[id].rot, float4(v.normal,1.)).xyz;
 			#endif
 			}
-
-
 
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 				void setup()
@@ -83,11 +78,10 @@ Shader "Dust/Instanced"
 			void surf(Input IN, inout SurfaceOutputStandard o)
 			{
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-				float4 col = float4(1.0, 1.0, 1.0, 1.0);
+				uint id = GetID();
+				float4 col = dataBuffer[id].cd;
 				float2 coord = IN.uv_MainTex;
 
-				uint id = GetID();
-				col = dataBuffer[id].cd;
 
 				fixed4 c = tex2D(_MainTex, coord) * _Color * col;
 				o.Albedo = c.rgb;

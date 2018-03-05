@@ -20,7 +20,7 @@ Shader "Dust/Pointcloud"
 
 			#include "DustParticleSystemCommon.cginc"
 			
-			StructuredBuffer<ParticleStruct> dataBuffer;
+			StructuredBuffer<DustParticle> dataBuffer;
 			int numParticles;		
 
 			struct v2f 
@@ -81,7 +81,7 @@ Shader "Dust/Pointcloud"
             #include "UnityCG.cginc"
 			#include "DustParticleSystemCommon.cginc"
 
-			StructuredBuffer<ParticleStruct> dataBuffer;
+			StructuredBuffer<DustParticle> dataBuffer;
 			int numParticles;
 
 			struct v2f_shdw

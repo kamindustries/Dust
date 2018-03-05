@@ -14,7 +14,7 @@ Shader "Dust/Pointcloud_Simple"
 		#include "UnityCG.cginc"
 		#include "DustParticleSystemCommon.cginc"
 		
-		StructuredBuffer<ParticleStruct> dataBuffer;
+		StructuredBuffer<DustParticle> dataBuffer;
 
 		struct ps_input 
 		{

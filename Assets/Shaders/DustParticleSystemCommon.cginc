@@ -1,11 +1,13 @@
+#include "NoiseSimplex.cginc"
+
 #define PI 3.14159265359
-#define IDENTITY3x3 float3x3(1,0,0,0,1,0,0,0,1)
+#define IDENTITY4x4 float4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
 // --------------------------------------------------
 // Structures
 // --------------------------------------------------
 
 // Particle system buffer
-struct ParticleStruct
+struct DustParticle
 {
     float3 pos;
     float3 vel;
@@ -16,10 +18,10 @@ struct ParticleStruct
     float momentum;
     float id; //for unique instancing
     float3 scale;
-    float3x3 rot;
+    float4x4 rot;
 };
 
-struct MeshStruct
+struct DustMesh
 {
     float3 pos;
     float3 normal;
@@ -70,7 +72,9 @@ float3 bayesianCoordinate(float3 a, float3 b, float3 c, float2 random) {
     return a + ((b-a)*r) + ((c-a)*s);
 }
 
-float3x3 rotateToVector(float3 dir) 
+
+
+float4x4 rotateToVector(float3 dir) 
 {
     float3 axis = normalize(dir);
 	axis.z *= -1.;
@@ -83,13 +87,15 @@ float3x3 rotateToVector(float3 dir)
 	float cosrz = x / xyz;
 	float sinrz = axis.y / xyz;
 
-	float3x3 maty = float3x3(cosry,	0, sinry,
-							0,		1, 0,
-							-sinry,	0, cosry );
+	float4x4 maty = float4x4(cosry,	0,  sinry,   0,
+							0,		1,  0,       0,
+							-sinry,	0,  cosry,   0,
+                            0,      0,  0,       1);
 
-	float3x3 matz = float3x3(cosrz , -sinrz,	0,
-							sinrz, 	cosrz,	0,
-							0,		0,		1 );
+	float4x4 matz = float4x4(cosrz, -sinrz, 0,  0,
+							sinrz, 	cosrz,	0,  0,
+							0,		0,		1,  0,
+                            0,      0,      0,  1 );
 
 	return mul(maty, matz);
 }

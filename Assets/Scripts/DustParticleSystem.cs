@@ -6,9 +6,25 @@ Description:
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Dust 
 {
+    // Particle system buffer
+    struct DustParticle
+    {
+        Vector3 pos;
+        Vector3 vel;
+        Color cd;
+        float age;
+        float lifespan;
+        float mass;
+        float momentum;
+        float id; //for unique instancing
+        Vector3 scale;
+        Matrix4x4 rot;
+    };
+
     public class DustParticleSystem : MonoBehaviour
     {
         #region Public Properties
@@ -65,7 +81,8 @@ namespace Dust
         #endregion
         
         #region Private Properties
-        private int m_kernel;
+        private int m_kernelSpawn;
+        private int m_kernelUpdate;
         private ComputeBuffer m_particlesBuffer;
         private ComputeBuffer m_kernelArgs;
         private int[] m_kernelArgsLocal = new int[3];
@@ -82,7 +99,8 @@ namespace Dust
         //We initialize the buffers and the material used to draw.
         void Start()
         {
-            m_kernel = ParticleSystemKernel.FindKernel("DustParticleSystemKernel");
+            m_kernelSpawn = ParticleSystemKernel.FindKernel("DustParticleSpawn");
+            m_kernelUpdate = ParticleSystemKernel.FindKernel("DustParticleUpdate");
             CreateBuffers();
             UpdateComputeUniforms();
 
@@ -108,7 +126,8 @@ namespace Dust
         private void Dispatch()
         {
             // if (m_kernelArgs == null) CreateBuffers();
-            ParticleSystemKernel.DispatchIndirect(m_kernel, m_kernelArgs);
+            ParticleSystemKernel.DispatchIndirect(m_kernelSpawn, m_kernelArgs);
+            ParticleSystemKernel.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
         }
 
         private void UpdateComputeUniforms() 
@@ -179,6 +198,7 @@ namespace Dust
             ParticleSystemKernel.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
             if (m_meshEmitter != null) {
                 ParticleSystemKernel.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
+                ParticleSystemKernel.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
                 ParticleSystemKernel.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
                 ParticleSystemKernel.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
             }
@@ -189,42 +209,36 @@ namespace Dust
         private void CreateBuffers()
         {
             // Allocate
-            int numElements = 18; //float4 cd; float3 pos, vel, scale; float age, lifespan, mass, momentum, id
-            numElements += 9; // float3x3 rot
             m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
-            m_particlesBuffer = new ComputeBuffer(m_maxVertCount, sizeof(float) * numElements); //float3 pos, vel, cd; float age
-
-            float[] particlesTemp = new float[m_maxVertCount * numElements];
+            m_particlesBuffer = new ComputeBuffer(m_maxVertCount, Marshal.SizeOf(typeof(DustParticle))); //float3 pos, vel, cd; float age
 
             UpdateKernelArgs();
+            ParticleSystemKernel.SetBuffer(m_kernelSpawn, "kernelArgs", m_kernelArgs);
+            ParticleSystemKernel.SetBuffer(m_kernelUpdate, "kernelArgs", m_kernelArgs);
 
-            ParticleSystemKernel.SetBuffer(m_kernel, "kernelArgs", m_kernelArgs);
-
+            DustParticle[] particlesTemp = new DustParticle[m_maxVertCount];
             for (int i = 0; i < m_maxVertCount; i++) {
-                for (int j = 0; j < numElements; j++) {
-                    particlesTemp[(i*numElements)+j] = 0f;
-                }
+                particlesTemp[i] = new DustParticle();
             }
 
             m_particlesBuffer.SetData(particlesTemp);
-            ParticleSystemKernel.SetBuffer(m_kernel, "output", m_particlesBuffer);
+            ParticleSystemKernel.SetBuffer(m_kernelSpawn, "output", m_particlesBuffer);
+            ParticleSystemKernel.SetBuffer(m_kernelUpdate, "output", m_particlesBuffer);
 
             // Create color ramp textures
             ColorByLife.Setup();
             ColorByVelocity.Setup();
-            ParticleSystemKernel.SetTexture(m_kernel, "_colorByLife", (Texture)ColorByLife.Texture);
-            ParticleSystemKernel.SetTexture(m_kernel, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
+            ParticleSystemKernel.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
+            ParticleSystemKernel.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             // Set up mesh emitter
             if (EmissionMeshRenderer != null) {
                 m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 m_meshEmitter.Update();
                 
-                ParticleSystemKernel.SetBuffer(m_kernel, "emissionMesh", m_meshEmitter.MeshBuffer);
-                ParticleSystemKernel.SetBuffer(m_kernel, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
+                ParticleSystemKernel.SetBuffer(m_kernelSpawn, "emissionMesh", m_meshEmitter.MeshBuffer);
+                ParticleSystemKernel.SetBuffer(m_kernelSpawn, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
             }
-
-            Debug.Log("Created buffers");
 
         }
 
