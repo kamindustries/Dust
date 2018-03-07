@@ -41,6 +41,9 @@ namespace Dust
             args[0] = numIndices;
             args[1] = _instanceCount;
             argsBuffer.SetData(args);
+        
+            propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
+        
         }
 
         public override void Draw() 
@@ -50,11 +53,10 @@ namespace Dust
 
         public override void UpdatePropertyBlock()
         {
-            propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
-            propertyBlock.SetVector("_Scale", Scale);
             if (args[1] != _instanceCount) {
                 args[1] = _instanceCount;
                 argsBuffer.SetData(args);
+                Debug.Log("instanceCount: " + _instanceCount);
             }
             propertyBlock.SetFloat("_NumInstances", InstanceCount);
             propertyBlock.SetFloat("_NumParticles", particles.Emission);

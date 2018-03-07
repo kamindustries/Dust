@@ -1,5 +1,5 @@
-#pragma kernel DustParticleSpawn
-#pragma kernel DustParticleUpdate
+#pragma kernel Spawn
+#pragma kernel Update
 
 #include "DustParticleSystemCommon.cginc"
 #include "NoiseSimplex.cginc"
@@ -61,7 +61,7 @@ int emissionMeshTrisCount;
 const float cellSize = 1.25;
 
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
-void DustParticleSpawn(uint3 id : SV_DispatchThreadID)
+void Spawn(uint3 id : SV_DispatchThreadID)
 {
 	int idx = id.x + id.y * thread_group_size_x * kernelArgs[0];
 
@@ -73,7 +73,6 @@ void DustParticleSpawn(uint3 id : SV_DispatchThreadID)
 	float r3 = rand(float2(id.x+0, id.y));
 	float r4 = rand(float2(id.x+fixedTime, id.x));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
-
 
 	// Spawn new particles
 	if (p.age <= 0.0) 
@@ -104,7 +103,7 @@ void DustParticleSpawn(uint3 id : SV_DispatchThreadID)
 				float3 dir = emissionMesh[tris.x].normal;
 				dir = normalize(mul(emissionMeshMatrixInvT, float4(dir, 1.)).xyz + float3(1e-6,0,0));
 				dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
-
+				dir += float3(1e-3,0,0); //guard against /0 later
 				p.vel = dir * initialSpeed * dt;
 
 				// Jitter
@@ -127,11 +126,8 @@ void DustParticleSpawn(uint3 id : SV_DispatchThreadID)
 }
 
 
-
-//The kernel for this compute shader, each thread group contains a number of threads specified by numthreads(x,y,z)
-//We lookup the the index into the flat array by using x + y * x_stride
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
-void DustParticleUpdate(uint3 id : SV_DispatchThreadID)
+void Update(uint3 id : SV_DispatchThreadID)
 {
 	int idx = id.x + id.y * thread_group_size_x * kernelArgs[0];
 
@@ -143,6 +139,9 @@ void DustParticleUpdate(uint3 id : SV_DispatchThreadID)
 	float r3 = rand(float2(id.x+0, id.y));
 	float r4 = rand(float2(id.x+fixedTime, id.x));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
+
+
+
 
 	// Sim
 	// Noise

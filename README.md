@@ -2,7 +2,7 @@
 Dust is a GPU-based particle simulation and rendering system for Unity.
 
 ### Usage
-Add the `DustParticleSystem` component to a Game Object and a DustRenderer, either `DustPointRenderer` or `DustInstanceRenderer`.    
+Add `DustParticleSystem` and a DustRenderer, either `DustPointRenderer` or `DustInstanceRenderer` to a game object.    
 
 All simulation is done in world space.   
 

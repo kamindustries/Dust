@@ -2,6 +2,7 @@
 
 #define PI 3.14159265359
 #define IDENTITY4x4 float4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+#define SMALLFLOAT3 float3(1e-6,0,0)
 // --------------------------------------------------
 // Structures
 // --------------------------------------------------
@@ -79,7 +80,7 @@ float4x4 rotateToVector(float3 dir)
     float3 axis = normalize(dir);
 	axis.z *= -1.;
 	
-	float xz = length(axis.xz);
+	float xz = length(axis.xz + 1e-6) ;
 	float xyz = 1.;
 	float x = sqrt(1. - axis.y * axis.y);
 	float cosry = axis.x / xz;

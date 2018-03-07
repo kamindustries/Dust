@@ -28,7 +28,7 @@ namespace Dust
     public class DustParticleSystem : MonoBehaviour
     {
         #region Public Properties
-        public ComputeShader ParticleSystemKernel;
+        public ComputeShader Compute;
 
         [Header("Particles")]
         public Vector2 Mass = new Vector2(0.5f, 0.5f);
@@ -99,8 +99,8 @@ namespace Dust
         //We initialize the buffers and the material used to draw.
         void Start()
         {
-            m_kernelSpawn = ParticleSystemKernel.FindKernel("DustParticleSpawn");
-            m_kernelUpdate = ParticleSystemKernel.FindKernel("DustParticleUpdate");
+            m_kernelSpawn = Compute.FindKernel("Spawn");
+            m_kernelUpdate = Compute.FindKernel("Update");
             CreateBuffers();
             UpdateComputeUniforms();
 
@@ -126,8 +126,8 @@ namespace Dust
         private void Dispatch()
         {
             // if (m_kernelArgs == null) CreateBuffers();
-            ParticleSystemKernel.DispatchIndirect(m_kernelSpawn, m_kernelArgs);
-            ParticleSystemKernel.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
+            Compute.DispatchIndirect(m_kernelSpawn, m_kernelArgs);
+            Compute.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
         }
 
         private void UpdateComputeUniforms() 
@@ -162,45 +162,45 @@ namespace Dust
 
             m_origin = transform.position;
 
-            ParticleSystemKernel.SetFloat("dt", Time.fixedDeltaTime);
-            ParticleSystemKernel.SetFloat("fixedTime", Time.fixedTime);
+            Compute.SetFloat("dt", Time.fixedDeltaTime);
+            Compute.SetFloat("fixedTime", Time.fixedTime);
             // Particles
-            ParticleSystemKernel.SetVector("origin", m_origin);
-            ParticleSystemKernel.SetVector("massNew", Mass);
-            ParticleSystemKernel.SetVector("momentumNew", Momentum);
-            ParticleSystemKernel.SetVector("lifespanNew", Lifespan);
+            Compute.SetVector("origin", m_origin);
+            Compute.SetVector("massNew", Mass);
+            Compute.SetVector("momentumNew", Momentum);
+            Compute.SetVector("lifespanNew", Lifespan);
 			// Velocity
-            ParticleSystemKernel.SetFloat("inheritVelocityMult", InheritVelocity);
-            ParticleSystemKernel.SetVector("initialVelocityDir", m_initialVelocityDir);
-            ParticleSystemKernel.SetVector("gravityIn", Physics.gravity);
-            ParticleSystemKernel.SetFloat("gravityModifier", GravityModifier);
-            ParticleSystemKernel.SetFloat("jitter", Jitter);
+            Compute.SetFloat("inheritVelocityMult", InheritVelocity);
+            Compute.SetVector("initialVelocityDir", m_initialVelocityDir);
+            Compute.SetVector("gravityIn", Physics.gravity);
+            Compute.SetFloat("gravityModifier", GravityModifier);
+            Compute.SetFloat("jitter", Jitter);
 			// Shape
-            ParticleSystemKernel.SetFloat("randomizeDirection", RandomizeDirection);
-            ParticleSystemKernel.SetInt("emissionShape", Shape);
-            ParticleSystemKernel.SetInt("emission", Emission);
-            ParticleSystemKernel.SetVector("emissionSize", EmissionSize);
-            ParticleSystemKernel.SetFloat("initialSpeed", InitialSpeed);
-            ParticleSystemKernel.SetFloat("scatterVolume", ScatterVolume);
+            Compute.SetFloat("randomizeDirection", RandomizeDirection);
+            Compute.SetInt("emissionShape", Shape);
+            Compute.SetInt("emission", Emission);
+            Compute.SetVector("emissionSize", EmissionSize);
+            Compute.SetFloat("initialSpeed", InitialSpeed);
+            Compute.SetFloat("scatterVolume", ScatterVolume);
 			// Rotation
-            ParticleSystemKernel.SetBool("alignToDirection", AlignToDirection);
-            ParticleSystemKernel.SetVector("startSize", StartSize);
-            ParticleSystemKernel.SetVector("startRotation", StartRotation);
-            ParticleSystemKernel.SetFloat("rotationOverLifetime", RotationOverLifetime);
+            Compute.SetBool("alignToDirection", AlignToDirection);
+            Compute.SetVector("startSize", StartSize);
+            Compute.SetVector("startRotation", StartRotation);
+            Compute.SetFloat("rotationOverLifetime", RotationOverLifetime);
 			// Color
-            ParticleSystemKernel.SetVector("startColor", StartColor);
-            ParticleSystemKernel.SetFloat("velocityColorRange", ColorByVelocity.Range);
+            Compute.SetVector("startColor", StartColor);
+            Compute.SetFloat("velocityColorRange", ColorByVelocity.Range);
 			// Noise
-            ParticleSystemKernel.SetInt("noiseType", NoiseType);
-            ParticleSystemKernel.SetVector("noiseAmplitude", NoiseAmplitude);
-            ParticleSystemKernel.SetVector("noiseScale", NoiseScale);
-            ParticleSystemKernel.SetVector("noiseOffset", NoiseOffset);
-            ParticleSystemKernel.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
+            Compute.SetInt("noiseType", NoiseType);
+            Compute.SetVector("noiseAmplitude", NoiseAmplitude);
+            Compute.SetVector("noiseScale", NoiseScale);
+            Compute.SetVector("noiseOffset", NoiseOffset);
+            Compute.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
             if (m_meshEmitter != null) {
-                ParticleSystemKernel.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
-                ParticleSystemKernel.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
-                ParticleSystemKernel.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
-                ParticleSystemKernel.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
+                Compute.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
+                Compute.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
+                Compute.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
+                Compute.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
             }
         }
 
@@ -213,8 +213,8 @@ namespace Dust
             m_particlesBuffer = new ComputeBuffer(m_maxVertCount, Marshal.SizeOf(typeof(DustParticle))); //float3 pos, vel, cd; float age
 
             UpdateKernelArgs();
-            ParticleSystemKernel.SetBuffer(m_kernelSpawn, "kernelArgs", m_kernelArgs);
-            ParticleSystemKernel.SetBuffer(m_kernelUpdate, "kernelArgs", m_kernelArgs);
+            Compute.SetBuffer(m_kernelSpawn, "kernelArgs", m_kernelArgs);
+            Compute.SetBuffer(m_kernelUpdate, "kernelArgs", m_kernelArgs);
 
             DustParticle[] particlesTemp = new DustParticle[m_maxVertCount];
             for (int i = 0; i < m_maxVertCount; i++) {
@@ -222,22 +222,24 @@ namespace Dust
             }
 
             m_particlesBuffer.SetData(particlesTemp);
-            ParticleSystemKernel.SetBuffer(m_kernelSpawn, "output", m_particlesBuffer);
-            ParticleSystemKernel.SetBuffer(m_kernelUpdate, "output", m_particlesBuffer);
+            Compute.SetBuffer(m_kernelSpawn, "output", m_particlesBuffer);
+            Compute.SetBuffer(m_kernelUpdate, "output", m_particlesBuffer);
 
             // Create color ramp textures
             ColorByLife.Setup();
             ColorByVelocity.Setup();
-            ParticleSystemKernel.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
-            ParticleSystemKernel.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
+            Compute.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
+            Compute.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
 
             // Set up mesh emitter
             if (EmissionMeshRenderer != null) {
                 m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 m_meshEmitter.Update();
-                
-                ParticleSystemKernel.SetBuffer(m_kernelSpawn, "emissionMesh", m_meshEmitter.MeshBuffer);
-                ParticleSystemKernel.SetBuffer(m_kernelSpawn, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
+
+                Compute.SetBuffer(m_kernelSpawn , "emissionMesh", m_meshEmitter.MeshBuffer);
+                Compute.SetBuffer(m_kernelSpawn , "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);                
+                // Compute.SetBuffer(m_kernelUpdate, "emissionMesh", m_meshEmitter.MeshBuffer);
+                // Compute.SetBuffer(m_kernelUpdate, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
             }
 
         }

@@ -19,8 +19,8 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Floats:
-    - _AtmosphereThickness: 1
-    - _Exposure: 1.3
+    - _AtmosphereThickness: 1.15
+    - _Exposure: 1.34
     - _SunDisk: 2
     - _SunSize: 0.04
     - _SunSizeConvergence: 5

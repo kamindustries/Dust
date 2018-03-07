@@ -6,7 +6,6 @@ Shader "Dust/Instanced"
 		_MainTex("Albedo (RGB)", 2D) = "white" {}
 		_Glossiness("Smoothness", Range(0,1)) = 0.5
 		_Metallic("Metallic", Range(0,1)) = 0.0
-		_Scale("Scale", Vector) = (1,1,1)
 	}
 		SubShader
 		{
@@ -32,23 +31,17 @@ Shader "Dust/Instanced"
 			sampler2D _MainTex;
 			half _Glossiness;
 			half _Metallic;
-			float3 _Scale;
 			int _NumInstances;
 			int _NumParticles;
 
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 				StructuredBuffer<DustParticle> dataBuffer;
-
-				uint GetID() 
-				{
-					return unity_InstanceID;
-				}
 			#endif
 				
 			void vert (inout appdata_full v)
 			{
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-				uint id = GetID();
+				uint id = unity_InstanceID;
 				float4 pos = float4(v.vertex.xyz * dataBuffer[id].scale, 1.);
 				v.vertex.xyz = mul(dataBuffer[id].rot, pos ).xyz;
 				v.normal = mul(dataBuffer[id].rot, float4(v.normal,1.)).xyz;
@@ -59,9 +52,8 @@ Shader "Dust/Instanced"
 				void setup()
 				{
 					// Get a random particle if there's more of them than instances
-					uint id = GetID();
+					uint id = unity_InstanceID;
 					float3 position = dataBuffer[id].pos;
-					// float3 scale = _Scale;
 					float3 scale = float3(1,1,1);
 
 					unity_ObjectToWorld._11_21_31_41 = float4(scale.x, 0, 0, 0);
@@ -78,7 +70,7 @@ Shader "Dust/Instanced"
 			void surf(Input IN, inout SurfaceOutputStandard o)
 			{
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-				uint id = GetID();
+				uint id = unity_InstanceID;
 				float4 col = dataBuffer[id].cd;
 				float2 coord = IN.uv_MainTex;
 
