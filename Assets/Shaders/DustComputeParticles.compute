@@ -1,22 +1,21 @@
+#pragma kernel Init
 #pragma kernel Spawn
 #pragma kernel Update
 
 #include "DustParticleSystemCommon.cginc"
 #include "NoiseSimplex.cginc"
 
-//We define the size of a group in the x and y directions, z direction will just be one
 #define thread_group_size_x 16
 #define thread_group_size_y 16
 
-
-//We keep three buffers accessed by the kernel, a constant buffer that is the same for every computation,
-//an offset buffer with a value to offset the wave, and an output buffer that is written to by the kernel
 Texture2D<float4> _colorByLife;
 Texture2D<float4> _colorByVelocity;
-RWStructuredBuffer<DustMesh> emissionMesh;
-RWStructuredBuffer<int> emissionMeshTris;
-RWStructuredBuffer<DustParticle> output;
-RWStructuredBuffer<int> kernelArgs;
+RWStructuredBuffer<DustMesh> _emissionMesh;
+RWStructuredBuffer<int> _emissionMeshTris;
+RWStructuredBuffer<DustParticle> _particles;
+RWStructuredBuffer<int> _kernelArgs;
+AppendStructuredBuffer<uint> _deadList;
+ConsumeStructuredBuffer<uint> _particlePool;
 
 SamplerState sampler_colorByLife;
 
@@ -61,11 +60,20 @@ int emissionMeshTrisCount;
 const float cellSize = 1.25;
 
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
+void Init(uint3 id : SV_DispatchThreadID)
+{
+	int idx = id.x + id.y * thread_group_size_x * _kernelArgs[0];
+    _particles[idx].active = false;
+    _deadList.Append(idx);
+}
+
+[numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void Spawn(uint3 id : SV_DispatchThreadID)
 {
-	int idx = id.x + id.y * thread_group_size_x * kernelArgs[0];
+	// int idx = id.x + id.y * thread_group_size_x * _kernelArgs[0];
+	uint idx = _particlePool.Consume();
 
-	DustParticle p = output[idx];
+	DustParticle p = _particles[idx];
 
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
@@ -74,64 +82,63 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 	float r4 = rand(float2(id.x+fixedTime, id.x));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
 
-	// Spawn new particles
-	if (p.age <= 0.0) 
+	p.active = true;
+
+	[call] switch(emissionShape) 
 	{
-		p.id = r4;
-		[call] switch(emissionShape) 
-		{
-			// Procedural sphere
-			case 0:
-				p.vel = randSphere * initialSpeed * dt;
-				p.pos = origin.xyz + (randSphere * emissionSize);
-				p.pos += p.vel * r1 * jitter;
-				break;
+		// Procedural sphere
+		case 0:
+			p.vel = randSphere * initialSpeed * dt;
+			p.pos = origin.xyz + (randSphere * emissionSize);
+			p.pos += p.vel * r1 * jitter;
+			break;
 
-			// Mesh emission
-			case 1:
-				// Pick a random index into triangle buffer that's divisible by 3
-			    int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
+		// Mesh emission
+		case 1:
+			// Pick a random index into triangle buffer that's divisible by 3
+			int randId = int(round(floor(r4 * emissionMeshTrisCount) / 3.) * 3.);
 
-				// Get the 3 id's that make up that triangle and generate a random point between them
-				int3 tris = int3(emissionMeshTris[randId+0], emissionMeshTris[randId+1], emissionMeshTris[randId+2]);
-				float3 a = emissionMesh[tris.x].pos;
-				float3 b = emissionMesh[tris.y].pos;
-				float3 c = emissionMesh[tris.z].pos;
-				p.pos = bayesianCoordinate(a, b, c, float2(r1,r2));
-				
-				// Velocity direction is the first vertex in the triangle...lazy
-				float3 dir = emissionMesh[tris.x].normal;
-				dir = normalize(mul(emissionMeshMatrixInvT, float4(dir, 1.)).xyz + float3(1e-6,0,0));
-				dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
-				dir += float3(1e-3,0,0); //guard against /0 later
-				p.vel = dir * initialSpeed * dt;
+			// Get the 3 id's that make up that triangle and generate a random point between them
+			int3 tris = int3(_emissionMeshTris[randId+0], _emissionMeshTris[randId+1], _emissionMeshTris[randId+2]);
+			float3 a = _emissionMesh[tris.x].pos;
+			float3 b = _emissionMesh[tris.y].pos;
+			float3 c = _emissionMesh[tris.z].pos;
+			p.pos = bayesianCoordinate(a, b, c, float2(r1,r2));
+			
+			// Velocity direction is the first vertex in the triangle...lazy
+			float3 dir = _emissionMesh[tris.x].normal;
+			dir = normalize(mul(emissionMeshMatrixInvT, float4(dir, 1.)).xyz + float3(1e-6,0,0));
+			dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
+			dir += float3(1e-3,0,0); //guard against /0 later
+			p.vel = dir * initialSpeed * dt;
 
-				// Jitter
-				p.pos += dir * dt * r1 * jitter;
-				p.pos = mul(emissionMeshMatrix, float4(p.pos, 1.)).xyz;
-				break;
-		}
-
-		// Inherit velocity from parent rigidbody or transform
-		p.vel += initialVelocityDir * inheritVelocityMult * dt;
-
-		float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
-		p.age = newLifespan;
-
-		p.lifespan = newLifespan;
-		p.mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
-		p.momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
+			// Jitter
+			p.pos += dir * dt * r1 * jitter;
+			p.pos = mul(emissionMeshMatrix, float4(p.pos, 1.)).xyz;
+			break;
 	}
-	output[idx] = p;
+
+	// Inherit velocity from parent rigidbody or transform
+	p.vel += initialVelocityDir * inheritVelocityMult * dt;
+
+	float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
+	p.age = newLifespan;
+
+	p.lifespan = newLifespan;
+	p.mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
+	p.momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
+	
+	_particles[idx] = p;
+
 }
 
 
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void Update(uint3 id : SV_DispatchThreadID)
 {
-	int idx = id.x + id.y * thread_group_size_x * kernelArgs[0];
+	int idx = id.x + id.y * thread_group_size_x * _kernelArgs[0];
 
-	DustParticle p = output[idx];
+	DustParticle p = _particles[idx];
 
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
@@ -139,9 +146,6 @@ void Update(uint3 id : SV_DispatchThreadID)
 	float r3 = rand(float2(id.x+0, id.y));
 	float r4 = rand(float2(id.x+fixedTime, id.x));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
-
-
-
 
 	// Sim
 	// Noise
@@ -177,6 +181,10 @@ void Update(uint3 id : SV_DispatchThreadID)
 
 	// Age
 	p.age -= dt;
+	if (p.age <= 0.0) {
+		p.active = false;
+		_deadList.Append(idx);
+	}
 
 
 	// Rotation and scale
@@ -189,7 +197,7 @@ void Update(uint3 id : SV_DispatchThreadID)
 	}
 	p.scale = startSize;
 
-	output[idx] = p;
+	_particles[idx] = p;
 
 
 }

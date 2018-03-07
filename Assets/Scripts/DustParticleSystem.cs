@@ -20,9 +20,9 @@ namespace Dust
         float lifespan;
         float mass;
         float momentum;
-        float id; //for unique instancing
         Vector3 scale;
         Matrix4x4 rot;
+        bool active;
     };
 
     public class DustParticleSystem : MonoBehaviour
@@ -84,8 +84,12 @@ namespace Dust
         private int m_kernelSpawn;
         private int m_kernelUpdate;
         private ComputeBuffer m_particlesBuffer;
+        private ComputeBuffer m_particlePoolBuffer;
+        private ComputeBuffer m_particlePoolArgsBuffer;
+        
         private ComputeBuffer m_kernelArgs;
         private int[] m_kernelArgsLocal = new int[3];
+        private int[] m_poolArgsLocal = new int[3];
     
         private Vector3 m_origin;
         private Vector3 m_initialVelocityDir;
@@ -103,6 +107,7 @@ namespace Dust
             m_kernelUpdate = Compute.FindKernel("Update");
             CreateBuffers();
             UpdateComputeUniforms();
+            DispatchInit();
 
             // Prewarm the system
             if (PreWarmFrames > 0) {
@@ -123,11 +128,108 @@ namespace Dust
             ReleaseBuffers();
         }
 
+        private void DispatchInit()
+        {
+            var initKernel = Compute.FindKernel("Init");
+            Compute.SetBuffer(initKernel, "_particles", m_particlesBuffer);
+            Compute.SetBuffer(initKernel, "_kernelArgs", m_kernelArgs);
+            Compute.SetBuffer(initKernel, "_deadList", m_particlePoolBuffer);
+            Compute.DispatchIndirect(initKernel, m_kernelArgs);
+        }
+
         private void Dispatch()
         {
-            // if (m_kernelArgs == null) CreateBuffers();
-            Compute.DispatchIndirect(m_kernelSpawn, m_kernelArgs);
+            int groupSize = GetPoolSize();
+            if (groupSize > 0) {
+                Compute.SetBuffer(m_kernelSpawn, "_particlePool", m_particlePoolBuffer);
+                Compute.Dispatch(m_kernelSpawn, groupSize, groupSize, 1);
+            }
+
+            Compute.SetBuffer(m_kernelUpdate, "_deadList", m_particlePoolBuffer);
             Compute.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
+        }
+
+        private int GetPoolSize()
+        {
+            m_particlePoolArgsBuffer.SetData(m_poolArgsLocal);
+            ComputeBuffer.CopyCount(m_particlePoolBuffer, m_particlePoolArgsBuffer, 0);
+            m_particlePoolArgsBuffer.GetData(m_poolArgsLocal);
+            int groupSize = (int)Mathf.Floor(Mathf.Sqrt(m_poolArgsLocal[0])/16f);
+            return groupSize;
+        }
+
+        // Create and initialize compute shader buffers
+        private void CreateBuffers()
+        {
+            CreatePoolArgs();
+            UpdateKernelArgs();
+
+            DustParticle[] particlesTemp = new DustParticle[m_maxVertCount];
+            for (int i = 0; i < m_maxVertCount; i++) {
+                particlesTemp[i] = new DustParticle();
+            }
+
+            m_particlesBuffer = new ComputeBuffer(m_maxVertCount, Marshal.SizeOf(typeof(DustParticle)));
+            m_particlesBuffer.SetData(particlesTemp);
+            Compute.SetBuffer(m_kernelSpawn, "_particles", m_particlesBuffer);
+            Compute.SetBuffer(m_kernelUpdate, "_particles", m_particlesBuffer);
+
+            // Create color ramp textures
+            ColorByLife.Setup();
+            ColorByVelocity.Setup();
+            Compute.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
+            Compute.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
+
+            // Set up mesh emitter
+            if (EmissionMeshRenderer != null) {
+                m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
+                m_meshEmitter.Update();
+
+                Compute.SetBuffer(m_kernelSpawn , "_emissionMesh", m_meshEmitter.MeshBuffer);
+                Compute.SetBuffer(m_kernelSpawn , "_emissionMeshTris", m_meshEmitter.MeshTrisBuffer);                
+            }
+
+        }
+
+        public void UpdateKernelArgs()
+        {
+            if (m_kernelArgs == null) {
+                m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
+            }
+            if (m_kernelArgsLocal == null) {
+                m_kernelArgsLocal = new int[3];
+            }
+
+            int groupSize = (int)Mathf.Ceil(Mathf.Sqrt(Emission)/16f);
+            m_kernelArgsLocal[0] = groupSize;
+            m_kernelArgsLocal[1] = groupSize;
+            m_kernelArgsLocal[2] = 1;
+            m_kernelArgs.SetData(m_kernelArgsLocal);
+
+            Compute.SetBuffer(m_kernelSpawn, "_kernelArgs", m_kernelArgs);
+            Compute.SetBuffer(m_kernelUpdate, "_kernelArgs", m_kernelArgs);            
+        }
+
+        private void CreatePoolArgs()
+        {
+            if (m_particlePoolBuffer != null) m_particlePoolBuffer.Release();
+            m_particlePoolBuffer = new ComputeBuffer(m_maxVertCount, sizeof(int), ComputeBufferType.Append);
+            m_particlePoolBuffer.SetCounterValue(0);
+
+            if (m_particlePoolArgsBuffer != null) m_particlePoolArgsBuffer.Release();
+            m_particlePoolArgsBuffer = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
+            m_poolArgsLocal = new int[] {0, 1, 0};
+        }
+
+        private void ReleaseBuffers()
+        {
+            m_particlesBuffer.Release();
+            m_particlePoolBuffer.Release();
+            m_particlePoolArgsBuffer.Release();
+            m_kernelArgs.Release();
+            if (m_meshEmitter != null) {
+                m_meshEmitter.ReleaseBuffers();
+            }
         }
 
         private void UpdateComputeUniforms() 
@@ -201,67 +303,6 @@ namespace Dust
                 Compute.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
                 Compute.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
                 Compute.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
-            }
-        }
-
-
-        // Create and initialize compute shader buffers
-        private void CreateBuffers()
-        {
-            // Allocate
-            m_kernelArgs = new ComputeBuffer(3, sizeof(int), ComputeBufferType.IndirectArguments);
-            m_particlesBuffer = new ComputeBuffer(m_maxVertCount, Marshal.SizeOf(typeof(DustParticle))); //float3 pos, vel, cd; float age
-
-            UpdateKernelArgs();
-            Compute.SetBuffer(m_kernelSpawn, "kernelArgs", m_kernelArgs);
-            Compute.SetBuffer(m_kernelUpdate, "kernelArgs", m_kernelArgs);
-
-            DustParticle[] particlesTemp = new DustParticle[m_maxVertCount];
-            for (int i = 0; i < m_maxVertCount; i++) {
-                particlesTemp[i] = new DustParticle();
-            }
-
-            m_particlesBuffer.SetData(particlesTemp);
-            Compute.SetBuffer(m_kernelSpawn, "output", m_particlesBuffer);
-            Compute.SetBuffer(m_kernelUpdate, "output", m_particlesBuffer);
-
-            // Create color ramp textures
-            ColorByLife.Setup();
-            ColorByVelocity.Setup();
-            Compute.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
-            Compute.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
-
-            // Set up mesh emitter
-            if (EmissionMeshRenderer != null) {
-                m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
-                m_meshEmitter.Update();
-
-                Compute.SetBuffer(m_kernelSpawn , "emissionMesh", m_meshEmitter.MeshBuffer);
-                Compute.SetBuffer(m_kernelSpawn , "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);                
-                // Compute.SetBuffer(m_kernelUpdate, "emissionMesh", m_meshEmitter.MeshBuffer);
-                // Compute.SetBuffer(m_kernelUpdate, "emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
-            }
-
-        }
-
-        public void UpdateKernelArgs()
-        {
-            int groupSize = (int)Mathf.Ceil(Mathf.Sqrt(Emission)/16f);
-            if (m_kernelArgsLocal.Length < 3) m_kernelArgsLocal = new int[3];
-
-            m_kernelArgsLocal[0] = groupSize;
-            m_kernelArgsLocal[1] = groupSize;
-            m_kernelArgsLocal[2] = 1;
-
-            m_kernelArgs.SetData(m_kernelArgsLocal);
-        }
-
-        private void ReleaseBuffers()
-        {
-            m_particlesBuffer.Release();
-            m_kernelArgs.Release();
-            if (m_meshEmitter != null) {
-                m_meshEmitter.ReleaseBuffers();
             }
         }
 

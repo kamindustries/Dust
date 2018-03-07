@@ -17,9 +17,9 @@ struct DustParticle
     float lifespan;
     float mass;
     float momentum;
-    float id; //for unique instancing
     float3 scale;
     float4x4 rot;
+    bool active;
 };
 
 struct DustMesh
