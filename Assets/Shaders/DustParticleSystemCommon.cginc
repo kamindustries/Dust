@@ -13,6 +13,7 @@ struct DustParticle
     float3 pos;
     float3 vel;
     float4 cd;
+    float4 startColor;
     float age;
     float lifespan;
     float mass;

@@ -16,6 +16,7 @@ namespace Dust
         Vector3 pos;
         Vector3 vel;
         Color cd;
+        Color startColor;
         float age;
         float lifespan;
         float mass;
@@ -66,6 +67,9 @@ namespace Dust
         public Color StartColor = new Color(1f,1f,1f,1f);
         public ColorRamp ColorByLife;
         public ColorRampRange ColorByVelocity;
+        [Range(0,1)]
+        public float RandomizeColor = 0f;
+        public bool UseMeshEmitterColor = false;
 
         [Header("Noise")]
         public int NoiseType = 1;
@@ -265,7 +269,7 @@ namespace Dust
             m_origin = transform.position;
 
             Compute.SetFloat("dt", Time.fixedDeltaTime);
-            Compute.SetFloat("fixedTime", Time.fixedTime);
+            Compute.SetFloat("fixedTime", Time.time);
             // Particles
             Compute.SetVector("origin", m_origin);
             Compute.SetVector("massNew", Mass);
@@ -292,6 +296,8 @@ namespace Dust
 			// Color
             Compute.SetVector("startColor", StartColor);
             Compute.SetFloat("velocityColorRange", ColorByVelocity.Range);
+            Compute.SetFloat("randomizeColor", RandomizeColor);
+            Compute.SetBool("useMeshEmitterColor", UseMeshEmitterColor);
 			// Noise
             Compute.SetInt("noiseType", NoiseType);
             Compute.SetVector("noiseAmplitude", NoiseAmplitude);

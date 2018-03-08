@@ -46,6 +46,9 @@ float rotationOverLifetime;
 
 float4 startColor;
 float velocityColorRange;
+float randomizeColor;
+bool useMeshEmitterColor;
+
 int noiseType;
 float3 noiseAmplitude;
 float3 noiseScale;
@@ -70,19 +73,19 @@ void Init(uint3 id : SV_DispatchThreadID)
 [numthreads(thread_group_size_x, thread_group_size_y, 1)]
 void Spawn(uint3 id : SV_DispatchThreadID)
 {
-	// int idx = id.x + id.y * thread_group_size_x * _kernelArgs[0];
 	uint idx = _particlePool.Consume();
-
 	DustParticle p = _particles[idx];
+	p.active = true;
 
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
 	float r2 = rand(float2(id.x+.2, id.y));
 	float r3 = rand(float2(id.x+0, id.y));
-	float r4 = rand(float2(id.x+fixedTime, id.x));
+	float r4 = rand(float2(id.x+fixedTime, id.y+fixedTime));
+	float r5 = rand(float2(id.x+fixedTime+.1, id.y+fixedTime+.2));
+	float r6 = rand(float2(id.x+fixedTime+.3, id.y+fixedTime+.4));
+	float r7 = rand(float2(id.x+fixedTime+.5, id.y+fixedTime+.6));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
-
-	p.active = true;
 
 	[call] switch(emissionShape) 
 	{
@@ -91,6 +94,8 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 			p.vel = randSphere * initialSpeed * dt;
 			p.pos = origin.xyz + (randSphere * emissionSize);
 			p.pos += p.vel * r1 * jitter;
+
+			p.startColor = startColor;
 			break;
 
 		// Mesh emission
@@ -115,8 +120,15 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 			// Jitter
 			p.pos += dir * dt * r1 * jitter;
 			p.pos = mul(emissionMeshMatrix, float4(p.pos, 1.)).xyz;
+
+			if (useMeshEmitterColor) {
+				p.startColor = float4(_emissionMesh[tris.x].cd, 1) * startColor;
+			}
+			else p.startColor = startColor;
 			break;
 	}
+
+	p.startColor *= lerp(float4(1,1,1,1), float4(r5,r6,r7,1.), randomizeColor);
 
 	// Inherit velocity from parent rigidbody or transform
 	p.vel += initialVelocityDir * inheritVelocityMult * dt;
@@ -144,7 +156,8 @@ void Update(uint3 id : SV_DispatchThreadID)
 	float r1 = rand(float2(id.x+.1, id.y));
 	float r2 = rand(float2(id.x+.2, id.y));
 	float r3 = rand(float2(id.x+0, id.y));
-	float r4 = rand(float2(id.x+fixedTime, id.x));
+	// float r4 = rand(float2(id.x+fixedTime, id.x));
+	float r4 = rand(float2(id.x+fixedTime+.3, id.y+fixedTime+.4));
 	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
 
 	// Sim
@@ -177,7 +190,7 @@ void Update(uint3 id : SV_DispatchThreadID)
 	float4 cdLife = _colorByLife.SampleLevel(sampler_colorByLife, coord, 0.0);
 	coord = float2(fit(clamp(speed, 0., velocityColorRange), 0., velocityColorRange, 0., 1.), 0.5);
 	float4 cdVel = _colorByVelocity.SampleLevel(sampler_colorByLife, coord, 0.0);
-	p.cd = startColor * cdLife * cdVel;
+	p.cd = p.startColor * cdLife * cdVel;
 
 	// Age
 	p.age -= dt;

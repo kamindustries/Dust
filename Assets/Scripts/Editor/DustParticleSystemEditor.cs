@@ -42,6 +42,8 @@ namespace Dust {
         SerializedProperty StartColor;
         SerializedProperty ColorByLife;
         SerializedProperty ColorByVelocity;
+        SerializedProperty RandomizeColor;
+        SerializedProperty UseMeshEmitterColor;
 
 		// Noise
 		string[] _noiseType = new string[] {"2D", "3D", "4D"};
@@ -84,6 +86,8 @@ namespace Dust {
 			StartColor = serializedObject.FindProperty("StartColor");
 			ColorByLife = serializedObject.FindProperty("ColorByLife");
 			ColorByVelocity = serializedObject.FindProperty("ColorByVelocity");
+			RandomizeColor = serializedObject.FindProperty("RandomizeColor");
+			UseMeshEmitterColor = serializedObject.FindProperty("UseMeshEmitterColor");
 			
 			// Noise
 		}
@@ -149,6 +153,8 @@ namespace Dust {
 				src.ColorByLife.Update();
 				src.ColorByVelocity.Update();
 			}
+			EditorGUILayout.PropertyField(RandomizeColor);
+			EditorGUILayout.PropertyField(UseMeshEmitterColor);
 
 			// Noise
 			// Using Vector4Field because for some reason PropertyField renders an array
