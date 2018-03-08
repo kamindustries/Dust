@@ -107,8 +107,14 @@ namespace Dust
         //We initialize the buffers and the material used to draw.
         void Start()
         {
+            if (Compute == null) {
+                Debug.LogError("DustParticleSystem: No compute shader attached!");
+                Debug.Break();
+            }
+
             m_kernelSpawn = Compute.FindKernel("Spawn");
             m_kernelUpdate = Compute.FindKernel("Update");
+
             CreateBuffers();
             UpdateComputeUniforms();
             DispatchInit();

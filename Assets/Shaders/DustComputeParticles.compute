@@ -85,7 +85,7 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 	float r5 = rand(float2(id.x+fixedTime+.1, id.y+fixedTime+.2));
 	float r6 = rand(float2(id.x+fixedTime+.3, id.y+fixedTime+.4));
 	float r7 = rand(float2(id.x+fixedTime+.5, id.y+fixedTime+.6));
-	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
+	float3 randSphere = randomSpherePoint(float3(r4,r5,r6), scatterVolume);
 
 	[call] switch(emissionShape) 
 	{
