@@ -14,8 +14,6 @@ namespace Dust {
         SerializedProperty Mass;
         SerializedProperty Momentum;
         SerializedProperty Lifespan;
-        SerializedProperty StartSize;
-        SerializedProperty StartRotation;
         SerializedProperty PreWarmFrames;
 
 		// Velocity
@@ -62,8 +60,6 @@ namespace Dust {
 			Mass = serializedObject.FindProperty("Mass");
 			Momentum = serializedObject.FindProperty("Momentum");
 			Lifespan = serializedObject.FindProperty("Lifespan");
-			StartSize = serializedObject.FindProperty("StartSize");
-			StartRotation = serializedObject.FindProperty("StartRotation");
 			PreWarmFrames = serializedObject.FindProperty("PreWarmFrames");
 
 			// Velocity
@@ -102,8 +98,6 @@ namespace Dust {
 			EditorGUILayout.PropertyField(Mass);
 			EditorGUILayout.PropertyField(Momentum);
 			EditorGUILayout.PropertyField(Lifespan);
-			EditorGUILayout.PropertyField(StartSize);
-			EditorGUILayout.PropertyField(StartRotation);
 			EditorGUILayout.PropertyField(PreWarmFrames);
 
 

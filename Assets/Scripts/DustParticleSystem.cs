@@ -35,8 +35,6 @@ namespace Dust
         public Vector2 Mass = new Vector2(0.5f, 0.5f);
         public Vector2 Momentum = new Vector2(0.95f, 0.95f);
         public Vector2 Lifespan = new Vector2(.5f, 1f);
-        public Vector3 StartSize = new Vector3(1f,1f,1f);
-        public Vector3 StartRotation = new Vector3(0f,0f,0f);
         public int PreWarmFrames = 0;
 
         [Header("Velocity")]
@@ -192,11 +190,12 @@ namespace Dust
 
             // Set up mesh emitter
             if (EmissionMeshRenderer != null) {
-                m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
+                if (m_meshEmitter == null) {
+                    m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
+                }
                 m_meshEmitter.Update();
-
                 Compute.SetBuffer(m_kernelSpawn , "_emissionMesh", m_meshEmitter.MeshBuffer);
-                Compute.SetBuffer(m_kernelSpawn , "_emissionMeshTris", m_meshEmitter.MeshTrisBuffer);                
+                Compute.SetBuffer(m_kernelSpawn , "_emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
             }
 
         }
@@ -296,8 +295,6 @@ namespace Dust
             Compute.SetFloat("scatterVolume", ScatterVolume);
 			// Rotation
             Compute.SetBool("alignToDirection", AlignToDirection);
-            Compute.SetVector("startSize", StartSize);
-            Compute.SetVector("startRotation", StartRotation);
             Compute.SetFloat("rotationOverLifetime", RotationOverLifetime);
 			// Color
             Compute.SetVector("startColor", StartColor);

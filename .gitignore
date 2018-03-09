@@ -8,6 +8,7 @@ Assets/3rdParty*
 Assets/Sandboxing*
 WIP/
 Extra/
+UnityPackageManager/
 
 # Visual Studio 2015 cache directory
 /.vs/

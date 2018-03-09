@@ -24,8 +24,6 @@ float fixedTime; //seconds
 float3 origin;
 float2 massNew;
 float2 momentumNew;
-float3 startSize;
-float3 startRotation;
 float2 lifespanNew;
 
 float inheritVelocityMult;
@@ -133,6 +131,9 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 	// Inherit velocity from parent rigidbody or transform
 	p.vel += initialVelocityDir * inheritVelocityMult * dt;
 
+	p.rot = IDENTITY4x4;
+	p.scale = float3(1.,1.,1.);
+
 	float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
 	p.age = newLifespan;
 
@@ -205,10 +206,6 @@ void Update(uint3 id : SV_DispatchThreadID)
 	if (alignToDirection) {
 		p.rot = rotateToVector(p.vel);
 	}
-	else {
-		p.rot = IDENTITY4x4;
-	}
-	p.scale = startSize;
 
 	_particles[idx] = p;
 
