@@ -58,6 +58,15 @@ namespace Dust
             }
             mesh.vertices = verts;
 
+            if (mesh.normals.Length > 0) {
+                Vector3[] normals = mesh.normals;
+                Quaternion rotation = Quaternion.Euler(m_rotation);
+                for (int i = 0; i < normals.Length; i++) {
+                    normals[i] =  rotation * normals[i];
+                }
+                mesh.normals = normals;
+            }
+
         }
 
         void UpdateArgs()
