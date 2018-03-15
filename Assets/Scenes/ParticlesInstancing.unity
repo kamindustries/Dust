@@ -231,7 +231,7 @@ Light:
   m_CookieSize: 10
   m_Shadows:
     m_Type: 2
-    m_Resolution: -1
+    m_Resolution: 3
     m_CustomResolution: -1
     m_Strength: 1
     m_Bias: 0.05
@@ -258,7 +258,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 919568531}
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 11.61, z: 0}
+  m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -274,6 +274,7 @@ GameObject:
   - component: {fileID: 1282248677}
   - component: {fileID: 1282248678}
   - component: {fileID: 1282248676}
+  - component: {fileID: 1282248679}
   m_Layer: 0
   m_Name: Dust-Particles
   m_TagString: Untagged
@@ -287,7 +288,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1282248675}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ecb5bc0a9a3d07c4090a518952435937, type: 3}
   m_Name: 
@@ -320,7 +321,7 @@ MonoBehaviour:
   Compute: {fileID: 7200000, guid: ca8315c68740d4c4b9b9a1f6f842c888, type: 3}
   Mass: {x: 0.5, y: 0.5}
   Momentum: {x: 0.95, y: 0.95}
-  Lifespan: {x: 0.5, y: 1}
+  Lifespan: {x: 2, y: 2}
   PreWarmFrames: 0
   InheritVelocity: 0
   EmitterVelocity: 0
@@ -330,7 +331,7 @@ MonoBehaviour:
   InitialSpeed: 0
   Jitter: 0
   RandomizeDirection: 0
-  EmissionSize: {x: 1, y: 1, z: 1}
+  EmissionSize: {x: 5, y: 5, z: 5}
   ScatterVolume: 0
   EmissionMeshRenderer: {fileID: 0}
   AlignToDirection: 0
@@ -399,11 +400,30 @@ MonoBehaviour:
     Range: 1
   RandomizeColor: 0
   UseMeshEmitterColor: 0
+  NoiseToggle: 0
   NoiseType: 1
   NoiseAmplitude: {x: 0, y: 0, z: 0}
   NoiseScale: {x: 1, y: 1, z: 1}
   NoiseOffset: {x: 0, y: 0, z: 0, w: 0}
   NoiseOffsetSpeed: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1282248679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282248675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5b755ec94773c4faa738b6433868be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_material: {fileID: 2100000, guid: 334f7686934d235499249992a754b7a7, type: 2}
+  InstancedMesh: {fileID: 4300000, guid: 395714597e9448946854d6ec8df1d015, type: 3}
+  InstanceCount: 10000
+  Size: {x: 0.1, y: 0.1, z: 0.1}
+  Rotation: {x: 0, y: 0, z: 0}
+  CastShadows: 1
+  ReceiveShadows: 1
 --- !u!1 &1825567955
 GameObject:
   m_ObjectHideFlags: 0

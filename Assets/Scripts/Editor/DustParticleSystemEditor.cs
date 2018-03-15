@@ -44,13 +44,13 @@ namespace Dust {
         SerializedProperty UseMeshEmitterColor;
 
 		// Noise
+        bool _noiseToggle = false;
 		string[] _noiseType = new string[] {"2D", "3D", "4D"};
 		int _noiseTypeIdx = 1;
         Vector3 _noiseAmplitude = new Vector4(0f,0f,0f);
         Vector3 _noiseScale = new Vector4(1f,1f,1f);
         Vector4 _noiseOffset = new Vector4(0f,0f,0f,0f);
         Vector4 _noiseOffsetSpeed = new Vector4(0f,0f,0f,0f);
-		GUIStyle headerStyle;
 
 		void OnEnable() 
 		{
@@ -86,10 +86,16 @@ namespace Dust {
 			UseMeshEmitterColor = serializedObject.FindProperty("UseMeshEmitterColor");
 			
 			// Noise
+
 		}
+
+
 
 		public override void OnInspectorGUI()
 		{
+			// Style
+			var origFontStyle = EditorStyles.label.fontStyle;
+
 			var src = target as DustParticleSystem;
 
 			EditorGUILayout.PropertyField(Compute);
@@ -100,7 +106,6 @@ namespace Dust {
 			EditorGUILayout.PropertyField(Lifespan);
 			EditorGUILayout.PropertyField(PreWarmFrames);
 
-
 			// Velocity
 			EditorGUILayout.PropertyField(InheritVelocity);
 			_emitterVelocityIdx = src.EmitterVelocity;
@@ -110,9 +115,7 @@ namespace Dust {
 
 			// Shape
 			EditorGUILayout.Space();
-			headerStyle = GUI.skin.label;
-			headerStyle.fontStyle = FontStyle.Bold;
-			EditorGUILayout.LabelField("Shape", headerStyle);
+			EditorGUILayout.LabelField("Shape", EditorStyles.boldLabel);
 
 			_shapeIdx = src.Shape;
 			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
@@ -154,22 +157,25 @@ namespace Dust {
 			// Using Vector4Field because for some reason PropertyField renders an array
 			// Also have to manually draw the header because it doesn't like Popup or Vector4Fields
 			EditorGUILayout.Space();
-			headerStyle = GUI.skin.label;
-			headerStyle.fontStyle = FontStyle.Bold;
-			EditorGUILayout.LabelField("Noise", headerStyle);
-
+			
+			_noiseToggle = src.NoiseToggle;
 			_noiseTypeIdx = src.NoiseType;
 			_noiseAmplitude = src.NoiseAmplitude;
         	_noiseScale = src.NoiseScale;
         	_noiseOffset = src.NoiseOffset;
         	_noiseOffsetSpeed = src.NoiseOffsetSpeed;
 
+			EditorStyles.label.fontStyle = FontStyle.Bold;
+			_noiseToggle = EditorGUILayout.Toggle("Noise", _noiseToggle, EditorStyles.toggle);
+			EditorStyles.label.fontStyle = origFontStyle;
+			
 			_noiseTypeIdx = EditorGUILayout.Popup("Noise Type", _noiseTypeIdx, _noiseType);
 			_noiseAmplitude = EditorGUILayout.Vector3Field("Noise Amplitude", _noiseAmplitude);
 			_noiseScale = EditorGUILayout.Vector3Field("Noise Scale", _noiseScale);
 			_noiseOffset = EditorGUILayout.Vector4Field("Noise Offset", _noiseOffset);
 			_noiseOffsetSpeed = EditorGUILayout.Vector4Field("Noise Offset Speed", _noiseOffsetSpeed);
 			
+			src.NoiseToggle = _noiseToggle;
 			src.NoiseType = _noiseTypeIdx;
 			src.NoiseAmplitude = _noiseAmplitude;
 			src.NoiseScale = _noiseScale;

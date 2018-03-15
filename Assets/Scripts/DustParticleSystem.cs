@@ -70,6 +70,7 @@ namespace Dust
         public bool UseMeshEmitterColor = false;
 
         [Header("Noise")]
+        public bool NoiseToggle = false;
         public int NoiseType = 1;
         public Vector3 NoiseAmplitude = new Vector3(0f,0f,0f);
         public Vector3 NoiseScale = new Vector3(1f,1f,1f);
@@ -302,6 +303,7 @@ namespace Dust
             Compute.SetFloat("randomizeColor", RandomizeColor);
             Compute.SetBool("useMeshEmitterColor", UseMeshEmitterColor);
 			// Noise
+            Compute.SetBool("noiseToggle", NoiseToggle);
             Compute.SetInt("noiseType", NoiseType);
             Compute.SetVector("noiseAmplitude", NoiseAmplitude);
             Compute.SetVector("noiseScale", NoiseScale);
