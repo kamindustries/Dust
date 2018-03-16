@@ -90,6 +90,7 @@ namespace Dust
         #endregion
         
         #region Private Properties
+        private ComputeShader m_compute;
         private int m_kernelSpawn;
         private int m_kernelUpdate;
         private ComputeBuffer m_particlesBuffer;
@@ -117,8 +118,12 @@ namespace Dust
                 Debug.Break();
             }
 
-            m_kernelSpawn = Compute.FindKernel("Spawn");
-            m_kernelUpdate = Compute.FindKernel("Update");
+            // Create a unique instance of the compute shader, needed for multiple particle systems
+            // This incorrectly throws an assertion error in 2017.3.1
+            m_compute = (ComputeShader)Instantiate(Compute);
+
+            m_kernelSpawn = m_compute.FindKernel("Spawn");
+            m_kernelUpdate = m_compute.FindKernel("Update");
 
             CreateBuffers();
             UpdateComputeUniforms();
@@ -145,23 +150,23 @@ namespace Dust
 
         private void DispatchInit()
         {
-            var initKernel = Compute.FindKernel("Init");
-            Compute.SetBuffer(initKernel, "_particles", m_particlesBuffer);
-            Compute.SetBuffer(initKernel, "_kernelArgs", m_kernelArgs);
-            Compute.SetBuffer(initKernel, "_deadList", m_particlePoolBuffer);
-            Compute.DispatchIndirect(initKernel, m_kernelArgs);
+            var initKernel = m_compute.FindKernel("Init");
+            m_compute.SetBuffer(initKernel, "_particles", m_particlesBuffer);
+            m_compute.SetBuffer(initKernel, "_kernelArgs", m_kernelArgs);
+            m_compute.SetBuffer(initKernel, "_deadList", m_particlePoolBuffer);
+            m_compute.DispatchIndirect(initKernel, m_kernelArgs);
         }
 
         private void Dispatch()
         {
             int groupSize = GetPoolSize();
             if (groupSize > 0) {
-                Compute.SetBuffer(m_kernelSpawn, "_particlePool", m_particlePoolBuffer);
-                Compute.Dispatch(m_kernelSpawn, groupSize, groupSize, 1);
+                m_compute.SetBuffer(m_kernelSpawn, "_particlePool", m_particlePoolBuffer);
+                m_compute.Dispatch(m_kernelSpawn, groupSize, groupSize, 1);
             }
 
-            Compute.SetBuffer(m_kernelUpdate, "_deadList", m_particlePoolBuffer);
-            Compute.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
+            m_compute.SetBuffer(m_kernelUpdate, "_deadList", m_particlePoolBuffer);
+            m_compute.DispatchIndirect(m_kernelUpdate, m_kernelArgs);
         }
 
         private int GetPoolSize()
@@ -186,16 +191,16 @@ namespace Dust
 
             m_particlesBuffer = new ComputeBuffer(m_maxVertCount, Marshal.SizeOf(typeof(DustParticle)));
             m_particlesBuffer.SetData(particlesTemp);
-            Compute.SetBuffer(m_kernelSpawn, "_particles", m_particlesBuffer);
-            Compute.SetBuffer(m_kernelUpdate, "_particles", m_particlesBuffer);
+            m_compute.SetBuffer(m_kernelSpawn, "_particles", m_particlesBuffer);
+            m_compute.SetBuffer(m_kernelUpdate, "_particles", m_particlesBuffer);
 
             // Create ramp textures
             SizeOverLife.Setup();
             ColorOverLife.Setup();
             ColorOverVelocity.Setup();
-            Compute.SetTexture(m_kernelUpdate, "_sizeOverLife", (Texture)SizeOverLife.Texture);
-            Compute.SetTexture(m_kernelUpdate, "_colorOverLife", (Texture)ColorOverLife.Texture);
-            Compute.SetTexture(m_kernelUpdate, "_colorOverVelocity", (Texture)ColorOverVelocity.Texture);
+            m_compute.SetTexture(m_kernelUpdate, "_sizeOverLife", (Texture)SizeOverLife.Texture);
+            m_compute.SetTexture(m_kernelUpdate, "_colorOverLife", (Texture)ColorOverLife.Texture);
+            m_compute.SetTexture(m_kernelUpdate, "_colorOverVelocity", (Texture)ColorOverVelocity.Texture);
 
             // Set up mesh emitter
             if (EmissionMeshRenderer != null) {
@@ -203,8 +208,8 @@ namespace Dust
                     m_meshEmitter = new DustMeshEmitter(EmissionMeshRenderer);
                 }
                 m_meshEmitter.Update();
-                Compute.SetBuffer(m_kernelSpawn , "_emissionMesh", m_meshEmitter.MeshBuffer);
-                Compute.SetBuffer(m_kernelSpawn , "_emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
+                m_compute.SetBuffer(m_kernelSpawn , "_emissionMesh", m_meshEmitter.MeshBuffer);
+                m_compute.SetBuffer(m_kernelSpawn , "_emissionMeshTris", m_meshEmitter.MeshTrisBuffer);
             }
 
         }
@@ -224,8 +229,8 @@ namespace Dust
             m_kernelArgsLocal[2] = 1;
             m_kernelArgs.SetData(m_kernelArgsLocal);
 
-            Compute.SetBuffer(m_kernelSpawn, "_kernelArgs", m_kernelArgs);
-            Compute.SetBuffer(m_kernelUpdate, "_kernelArgs", m_kernelArgs);            
+            m_compute.SetBuffer(m_kernelSpawn, "_kernelArgs", m_kernelArgs);
+            m_compute.SetBuffer(m_kernelUpdate, "_kernelArgs", m_kernelArgs);            
         }
 
         private void CreatePoolArgs()
@@ -282,52 +287,52 @@ namespace Dust
 
             m_origin = transform.position;
 
-            Compute.SetFloat("dt", Time.fixedDeltaTime);
-            Compute.SetFloat("fixedTime", Time.time);
+            m_compute.SetFloat("dt", Time.fixedDeltaTime);
+            m_compute.SetFloat("fixedTime", Time.time);
             // Particles
-            Compute.SetVector("origin", m_origin);
-            Compute.SetVector("massNew", Mass);
-            Compute.SetVector("momentumNew", Momentum);
-            Compute.SetVector("lifespanNew", Lifespan);
+            m_compute.SetVector("origin", m_origin);
+            m_compute.SetVector("massNew", Mass);
+            m_compute.SetVector("momentumNew", Momentum);
+            m_compute.SetVector("lifespanNew", Lifespan);
 			// Velocity
-            Compute.SetFloat("inheritVelocityMult", InheritVelocity);
-            Compute.SetVector("initialVelocityDir", m_initialVelocityDir);
-            Compute.SetVector("gravityIn", Physics.gravity);
-            Compute.SetFloat("gravityModifier", GravityModifier);
+            m_compute.SetFloat("inheritVelocityMult", InheritVelocity);
+            m_compute.SetVector("initialVelocityDir", m_initialVelocityDir);
+            m_compute.SetVector("gravityIn", Physics.gravity);
+            m_compute.SetFloat("gravityModifier", GravityModifier);
 			// Shape
-            Compute.SetInt("emissionShape", Shape);
-            Compute.SetInt("emission", Emission);
-            Compute.SetVector("emissionSize", EmissionSize);
-            Compute.SetFloat("scatterVolume", ScatterVolume);
-            Compute.SetFloat("initialSpeed", InitialSpeed);
-            Compute.SetFloat("jitter", Jitter);
-            Compute.SetFloat("randomizeDirection", RandomizeDirection);
-            Compute.SetFloat("randomizeRotation", RandomizeRotation);
-            Compute.SetBool("alignToInitialDirection", AlignToInitialDirection);
+            m_compute.SetInt("emissionShape", Shape);
+            m_compute.SetInt("emission", Emission);
+            m_compute.SetVector("emissionSize", EmissionSize);
+            m_compute.SetFloat("scatterVolume", ScatterVolume);
+            m_compute.SetFloat("initialSpeed", InitialSpeed);
+            m_compute.SetFloat("jitter", Jitter);
+            m_compute.SetFloat("randomizeDirection", RandomizeDirection);
+            m_compute.SetFloat("randomizeRotation", RandomizeRotation);
+            m_compute.SetBool("alignToInitialDirection", AlignToInitialDirection);
             // Size
-            Compute.SetBool("sizeOverLifeToggle", SizeOverLife.Enable);
+            m_compute.SetBool("sizeOverLifeToggle", SizeOverLife.Enable);
 			// Rotation
-            Compute.SetBool("alignToDirection", AlignToDirection);
-            Compute.SetVector("rotationOverLifetime", RotationOverLifetime);
+            m_compute.SetBool("alignToDirection", AlignToDirection);
+            m_compute.SetVector("rotationOverLifetime", RotationOverLifetime);
 			// Color
-            Compute.SetVector("startColor", StartColor);
-            Compute.SetBool("colorOverLifeToggle", ColorOverLife.Enable);
-            Compute.SetBool("colorOverVelocityToggle", ColorOverVelocity.Enable);
-            Compute.SetFloat("velocityColorRange", ColorOverVelocity.Range);
-            Compute.SetFloat("randomizeColor", RandomizeColor);
-            Compute.SetBool("useMeshEmitterColor", UseMeshEmitterColor);
+            m_compute.SetVector("startColor", StartColor);
+            m_compute.SetBool("colorOverLifeToggle", ColorOverLife.Enable);
+            m_compute.SetBool("colorOverVelocityToggle", ColorOverVelocity.Enable);
+            m_compute.SetFloat("velocityColorRange", ColorOverVelocity.Range);
+            m_compute.SetFloat("randomizeColor", RandomizeColor);
+            m_compute.SetBool("useMeshEmitterColor", UseMeshEmitterColor);
 			// Noise
-            Compute.SetBool("noiseToggle", NoiseToggle);
-            Compute.SetInt("noiseType", NoiseType);
-            Compute.SetVector("noiseAmplitude", NoiseAmplitude);
-            Compute.SetVector("noiseScale", NoiseScale);
-            Compute.SetVector("noiseOffset", NoiseOffset);
-            Compute.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
+            m_compute.SetBool("noiseToggle", NoiseToggle);
+            m_compute.SetInt("noiseType", NoiseType);
+            m_compute.SetVector("noiseAmplitude", NoiseAmplitude);
+            m_compute.SetVector("noiseScale", NoiseScale);
+            m_compute.SetVector("noiseOffset", NoiseOffset);
+            m_compute.SetVector("noiseOffsetSpeed", NoiseOffsetSpeed);
             if (m_meshEmitter != null) {
-                Compute.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
-                Compute.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
-                Compute.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
-                Compute.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
+                m_compute.SetMatrix("emissionMeshMatrix", m_meshEmitter.MeshRenderer.localToWorldMatrix);
+                m_compute.SetMatrix("emissionMeshMatrixInvT", m_meshEmitter.MeshRenderer.localToWorldMatrix.inverse.transpose);
+                m_compute.SetInt("emissionMeshVertCount", m_meshEmitter.VertexCount);
+                m_compute.SetInt("emissionMeshTrisCount", m_meshEmitter.TriangleCount);
             }
         }
 

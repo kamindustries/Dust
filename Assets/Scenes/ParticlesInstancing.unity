@@ -345,7 +345,7 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   AlignToDirection: 0
-  RotationOverLifetime: {x: 0.1, y: 0.1, z: 0.1}
+  RotationOverLifetime: {x: 0, y: 0, z: 0}
   StartColor: {r: 1, g: 1, b: 1, a: 1}
   ColorOverLife:
     Enable: 0

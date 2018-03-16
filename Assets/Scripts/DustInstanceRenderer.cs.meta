@@ -5,7 +5,9 @@ licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - m_material: {fileID: 2100000, guid: 334f7686934d235499249992a754b7a7, type: 2}
+  - InstancedMesh: {fileID: 4300000, guid: 395714597e9448946854d6ec8df1d015, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

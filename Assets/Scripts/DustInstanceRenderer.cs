@@ -27,6 +27,7 @@ namespace Dust
         private uint[] m_args = new uint[5] { 0, 0, 0, 0, 0 }; 
         private Vector3 m_size;
         private Vector3 m_rotation;
+        bool isBufferSet = false;
 
         void Start ()
         {
@@ -37,7 +38,6 @@ namespace Dust
             UpdateArgs();        
         
             propertyBlock.Clear();
-            propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
         }
 
         void UpdateMesh()
@@ -91,8 +91,16 @@ namespace Dust
             }
             propertyBlock.SetFloat("_NumInstances", InstanceCount);
             propertyBlock.SetFloat("_NumParticles", particles.Emission);
-
         }
+
+        // Late update to give particles time to set up. Start wasn't working
+        void LateUpdate() 
+        {
+            if (!isBufferSet) {
+                propertyBlock.SetBuffer("dataBuffer", particles.ParticlesBuffer);
+                isBufferSet = true;
+            }
+        }        
 
         void OnDestroy() 
         {

@@ -6,6 +6,9 @@ Add `DustParticleSystem` and a DustRenderer, either `DustPointRenderer` or `Dust
 
 All simulation is done in world space.   
 
+#### Note
+There's a bug in 2017.3 that incorrectly throws an assertion error when instantiating a compute shader. It runs fine so it can be ignored for now.
+
 ### Requirements
 * \>=Unity 2017.3
 * GPU with compute shader support
