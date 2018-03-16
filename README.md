@@ -40,4 +40,4 @@ The particle system kernel handles simulation state via a structured buffer cont
 * Optimization:
     - Precompute static random fields
     - Make noise a separate kernel, static whenever possble
-* Collapsable sections in the editor
+* Reload compute shader at runtime/live coding

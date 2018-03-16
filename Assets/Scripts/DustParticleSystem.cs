@@ -31,18 +31,18 @@ namespace Dust
         #region Public Properties
         public ComputeShader Compute;
 
-        [Header("Particles")]
+        // [Header("Particles")]
         public Vector2 Mass = new Vector2(0.5f, 0.5f);
         public Vector2 Momentum = new Vector2(0.95f, 0.95f);
         public Vector2 Lifespan = new Vector2(.5f, 1f);
         public int PreWarmFrames = 0;
 
-        [Header("Velocity")]
+        // [Header("Velocity")]
         public float InheritVelocity = 0f;
         public int EmitterVelocity = 0;
         public float GravityModifier = 0f;
 
-        [Header("Shape")]
+        // [Header("Shape")]
         public int Shape = 0;
         [Range(0,m_maxVertCount)]
         public int Emission = 65000;
@@ -59,14 +59,14 @@ namespace Dust
         public float ScatterVolume = 0f;
         public MeshRenderer EmissionMeshRenderer;
 
-        [Header("Size")]
+        // [Header("Size")]
         public CurveRamp SizeOverLife;
 
-        [Header("Rotation")]
+        // [Header("Rotation")]
         public bool AlignToDirection = false;
         public Vector3 RotationOverLifetime = new Vector3(0,0,0);
 
-        [Header("Color")]
+        // [Header("Color")]
         [ColorUsageAttribute(true,true,0,8,.125f,3)]
         public Color StartColor = new Color(1f,1f,1f,1f);
         public ColorRamp ColorOverLife;
@@ -75,7 +75,7 @@ namespace Dust
         public float RandomizeColor = 0f;
         public bool UseMeshEmitterColor = false;
 
-        [Header("Noise")]
+        // [Header("Noise")]
         public bool NoiseToggle = false;
         public int NoiseType = 1;
         public Vector3 NoiseAmplitude = new Vector3(0f,0f,0f);

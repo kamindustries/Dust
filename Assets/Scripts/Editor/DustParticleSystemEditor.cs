@@ -57,6 +57,18 @@ namespace Dust {
         Vector4 _noiseOffset = new Vector4(0f,0f,0f,0f);
         Vector4 _noiseOffsetSpeed = new Vector4(0f,0f,0f,0f);
 
+		// Foldouts
+		bool showParticles = true;
+		bool showVelocity = true;
+		bool showShape = true;
+		bool showSize = true;
+		bool showRotation = true;
+		bool showColor = true;
+		bool showNoise = true;
+
+
+		GUIStyle foldStyle;
+
 		void OnEnable() 
 		{
 			Compute = serializedObject.FindProperty("Compute");
@@ -96,7 +108,6 @@ namespace Dust {
 			UseMeshEmitterColor = serializedObject.FindProperty("UseMeshEmitterColor");
 			
 			// Noise
-
 		}
 
 
@@ -104,102 +115,123 @@ namespace Dust {
 		public override void OnInspectorGUI()
 		{
 			// Style
-			var origFontStyle = EditorStyles.label.fontStyle;
+			foldStyle = new GUIStyle(EditorStyles.foldout);
+			foldStyle.fontStyle = FontStyle.Bold;
 
 			var src = target as DustParticleSystem;
 
 			EditorGUILayout.PropertyField(Compute);
 
 			// Particles
-			EditorGUILayout.PropertyField(Mass);
-			EditorGUILayout.PropertyField(Momentum);
-			EditorGUILayout.PropertyField(Lifespan);
-			EditorGUILayout.PropertyField(PreWarmFrames);
+			showParticles = EditorGUILayout.Foldout(showParticles, "Particles", foldStyle);
+			if (showParticles) {
+				EditorGUILayout.PropertyField(Mass);
+				EditorGUILayout.PropertyField(Momentum);
+				EditorGUILayout.PropertyField(Lifespan);
+				EditorGUILayout.PropertyField(PreWarmFrames);
+			}
+
 
 			// Velocity
-			EditorGUILayout.PropertyField(InheritVelocity);
-			_emitterVelocityIdx = src.EmitterVelocity;
-			_emitterVelocityIdx = EditorGUILayout.Popup("Emitter Velocity", _emitterVelocityIdx, _emitterVelocity);
-			src.EmitterVelocity = _emitterVelocityIdx;
-			EditorGUILayout.PropertyField(GravityModifier);
+			EditorGUILayout.Space();
+			showVelocity = EditorGUILayout.Foldout(showVelocity, "Velocity", foldStyle);
+			if (showVelocity) {
+				EditorGUILayout.PropertyField(InheritVelocity);
+				_emitterVelocityIdx = src.EmitterVelocity;
+				_emitterVelocityIdx = EditorGUILayout.Popup("Emitter Velocity", _emitterVelocityIdx, _emitterVelocity);
+				src.EmitterVelocity = _emitterVelocityIdx;
+				EditorGUILayout.PropertyField(GravityModifier);
+			}
 
 			// Shape
 			EditorGUILayout.Space();
-			EditorGUILayout.LabelField("Shape", EditorStyles.boldLabel);
-
-			_shapeIdx = src.Shape;
-			_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
-			src.Shape = _shapeIdx;
-			switch(_shapeIdx) {
-				case 0:
-					EditorGUILayout.PropertyField(EmissionSize);
-					EditorGUILayout.PropertyField(ScatterVolume);
-					break;
-				case 1:
-					EditorGUILayout.PropertyField(EmissionMeshRenderer, new GUIContent("Mesh Renderer"));
-					break;
+			showShape = EditorGUILayout.Foldout(showShape, "Shape", foldStyle);
+			if (showShape) {
+				_shapeIdx = src.Shape;
+				_shapeIdx = EditorGUILayout.Popup("Shape", _shapeIdx, _shape);
+				src.Shape = _shapeIdx;
+				switch(_shapeIdx) {
+					case 0:
+						EditorGUILayout.PropertyField(EmissionSize);
+						EditorGUILayout.PropertyField(ScatterVolume);
+						break;
+					case 1:
+						EditorGUILayout.PropertyField(EmissionMeshRenderer, new GUIContent("Mesh Renderer"));
+						break;
+				}
+				EditorGUI.BeginChangeCheck();
+					src.Emission = EditorGUILayout.IntSlider("Emission", src.Emission, 0, src.MaxVerts);
+				if (EditorGUI.EndChangeCheck()) { src.UpdateKernelArgs(); }			
+				EditorGUILayout.PropertyField(InitialSpeed);
+				EditorGUILayout.PropertyField(Jitter);
+				EditorGUILayout.PropertyField(RandomizeDirection);
+				EditorGUILayout.PropertyField(RandomizeRotation);
+				EditorGUILayout.PropertyField(AlignToInitialDirection);
 			}
-			EditorGUI.BeginChangeCheck();
-				src.Emission = EditorGUILayout.IntSlider("Emission", src.Emission, 0, src.MaxVerts);
-			if (EditorGUI.EndChangeCheck()) { src.UpdateKernelArgs(); }			
-			EditorGUILayout.PropertyField(InitialSpeed);
-			EditorGUILayout.PropertyField(Jitter);
-			EditorGUILayout.PropertyField(RandomizeDirection);
-			EditorGUILayout.PropertyField(RandomizeRotation);
-			EditorGUILayout.PropertyField(AlignToInitialDirection);
 
 			// Size
-			EditorGUI.BeginChangeCheck();
-				EditorGUILayout.PropertyField(SizeOverLife, true);
-			if (EditorGUI.EndChangeCheck()) {
-				src.SizeOverLife.Update();
+			EditorGUILayout.Space();
+			showSize = EditorGUILayout.Foldout(showSize, "Size", foldStyle);
+			if (showSize) {			
+				EditorGUI.BeginChangeCheck();
+					EditorGUILayout.PropertyField(SizeOverLife, true);
+				if (EditorGUI.EndChangeCheck()) {
+					src.SizeOverLife.Update();
+				}
 			}
 
 			// Rotation
-			EditorGUILayout.PropertyField(AlignToDirection);
-			EditorGUILayout.PropertyField(RotationOverLifetime);
+			EditorGUILayout.Space();
+			showRotation = EditorGUILayout.Foldout(showRotation, "Rotation", foldStyle);
+			if (showRotation) {						
+				EditorGUILayout.PropertyField(AlignToDirection);
+				EditorGUILayout.PropertyField(RotationOverLifetime);
+			}
 
 			// Color
-			EditorGUILayout.PropertyField(StartColor);
-			// Interactive gradient editor
-			EditorGUI.BeginChangeCheck();
-				EditorGUILayout.PropertyField(ColorOverLife, true);
-				EditorGUILayout.PropertyField(ColorOverVelocity, true);
-			if (EditorGUI.EndChangeCheck()) {
-				src.ColorOverLife.Update();
-				src.ColorOverVelocity.Update();
+			EditorGUILayout.Space();
+			showColor = EditorGUILayout.Foldout(showColor, "Color", foldStyle);
+			if (showColor) {					
+				EditorGUILayout.PropertyField(StartColor);
+				// Interactive gradient editor
+				EditorGUI.BeginChangeCheck();
+					EditorGUILayout.PropertyField(ColorOverLife, true);
+					EditorGUILayout.PropertyField(ColorOverVelocity, true);
+				if (EditorGUI.EndChangeCheck()) {
+					src.ColorOverLife.Update();
+					src.ColorOverVelocity.Update();
+				}
+				EditorGUILayout.PropertyField(RandomizeColor);
+				EditorGUILayout.PropertyField(UseMeshEmitterColor);
 			}
-			EditorGUILayout.PropertyField(RandomizeColor);
-			EditorGUILayout.PropertyField(UseMeshEmitterColor);
 
 			// Noise
 			// Using Vector4Field because for some reason PropertyField renders an array
 			// Also have to manually draw the header because it doesn't like Popup or Vector4Fields
 			EditorGUILayout.Space();
-			
-			_noiseToggle = src.NoiseToggle;
-			_noiseTypeIdx = src.NoiseType;
-			_noiseAmplitude = src.NoiseAmplitude;
-        	_noiseScale = src.NoiseScale;
-        	_noiseOffset = src.NoiseOffset;
-        	_noiseOffsetSpeed = src.NoiseOffsetSpeed;
+			showNoise = EditorGUILayout.Foldout(showNoise, "Noise", foldStyle);
+			if (showNoise) {					
+				_noiseToggle = src.NoiseToggle;
+				_noiseTypeIdx = src.NoiseType;
+				_noiseAmplitude = src.NoiseAmplitude;
+				_noiseScale = src.NoiseScale;
+				_noiseOffset = src.NoiseOffset;
+				_noiseOffsetSpeed = src.NoiseOffsetSpeed;
 
-			EditorStyles.label.fontStyle = FontStyle.Bold;
-			_noiseToggle = EditorGUILayout.Toggle("Noise", _noiseToggle, EditorStyles.toggle);
-			EditorStyles.label.fontStyle = origFontStyle;
-			
-			_noiseTypeIdx = EditorGUILayout.Popup("Noise Type", _noiseTypeIdx, _noiseType);
-			_noiseAmplitude = EditorGUILayout.Vector3Field("Noise Amplitude", _noiseAmplitude);
-			_noiseScale = EditorGUILayout.Vector3Field("Noise Scale", _noiseScale);
-			_noiseOffset = EditorGUILayout.Vector4Field("Noise Offset", _noiseOffset);
-			_noiseOffsetSpeed = EditorGUILayout.Vector4Field("Noise Offset Speed", _noiseOffsetSpeed);
-			
-			src.NoiseToggle = _noiseToggle;
-			src.NoiseType = _noiseTypeIdx;
-			src.NoiseAmplitude = _noiseAmplitude;
-			src.NoiseScale = _noiseScale;
-			src.NoiseOffset = _noiseOffset;
-			src.NoiseOffsetSpeed = _noiseOffsetSpeed;
+				_noiseToggle = EditorGUILayout.Toggle("Enable Noise", _noiseToggle);
+				_noiseTypeIdx = EditorGUILayout.Popup("Noise Type", _noiseTypeIdx, _noiseType);
+				_noiseAmplitude = EditorGUILayout.Vector3Field("Noise Amplitude", _noiseAmplitude);
+				_noiseScale = EditorGUILayout.Vector3Field("Noise Scale", _noiseScale);
+				_noiseOffset = EditorGUILayout.Vector4Field("Noise Offset", _noiseOffset);
+				_noiseOffsetSpeed = EditorGUILayout.Vector4Field("Noise Offset Speed", _noiseOffsetSpeed);
+				
+				src.NoiseToggle = _noiseToggle;
+				src.NoiseType = _noiseTypeIdx;
+				src.NoiseAmplitude = _noiseAmplitude;
+				src.NoiseScale = _noiseScale;
+				src.NoiseOffset = _noiseOffset;
+				src.NoiseOffsetSpeed = _noiseOffsetSpeed;
+			}
 
 			EditorUtility.SetDirty(src);
 
