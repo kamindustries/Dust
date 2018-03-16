@@ -20,7 +20,7 @@ All simulation is done in world space.
 * 2D, 3D, 4D animated noise
 * Color by life and by velocity gradients
 * Mass, momentum, and lifespan random value range
-* Size over lifetime
+* Size and rotation over lifetime
 * Cast- and self-shadowing
 * Inherit velocity Rigidboy or Transform component
 * Align to direction
@@ -31,7 +31,6 @@ The particle system kernel handles simulation state via a structured buffer cont
 
 ### To Do
 * Depth buffer collision
-* Rotation over lifetime + by speed
 * Emission shapes:
     - Cone
     - Skinned mesh renderer
@@ -41,4 +40,4 @@ The particle system kernel handles simulation state via a structured buffer cont
 * Optimization:
     - Precompute static random fields
     - Make noise a separate kernel, static whenever possble
-* Switch to property block for renderer
+* Collapsable sections in the editor

@@ -174,15 +174,6 @@ void Update(uint3 id : SV_DispatchThreadID)
 
 	DustParticle p = _particles[idx];
 
-	// Randomness
-	float r1 = rand(float2(id.x+.1, id.y));
-	float r2 = rand(float2(id.x+.2, id.y));
-	float r3 = rand(float2(id.x+0, id.y));
-	// float r4 = rand(float2(id.x+fixedTime, id.x));
-	float r4 = rand(float2(id.x+fixedTime+.3, id.y+fixedTime+.4));
-	float3 randSphere = randomSpherePoint(float3(r1,r2,r3), scatterVolume);
-
-	// Sim
 	// Noise
 	float3 simplexNoise = float3(0,0,0);
 	if (noiseToggle) {
@@ -223,16 +214,15 @@ void Update(uint3 id : SV_DispatchThreadID)
 	}
 	p.cd = p.startColor * cdLife * cdVel;
 
-	// Rotation and scale
+	// Rotation
 	if (alignToDirection) {
 		if (length(p.vel) > SMALLFLOAT) {
 			p.rot = rotateToVector(p.vel);
 		}
 	}
-
-	// Add rotation every step
 	p.rot = rotateXYZ(p.rot, rotationOverLifetime * dt);
 
+	// Scale
 	if (sizeOverLifeToggle) {
 		p.scale = _sizeOverLife.SampleLevel(sampler_colorOverLife, ageCoord, 0.0).r;
 	}
