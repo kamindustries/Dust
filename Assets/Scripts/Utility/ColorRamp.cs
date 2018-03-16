@@ -8,39 +8,23 @@ using UnityEngine;
 namespace Dust 
 {
 	[System.Serializable]
-	public class ColorRamp {
+	public class ColorRamp : RampBase 
+	{
 
 		public Gradient Gradient;
 
-		private Texture2D texture;
-		public Texture2D Texture 
+		public override void Update() 
 		{
-			get
-			{
-				return texture;
-			}
-		}
-		private const int width = 1024;
-		
+			if (!Texture) Setup();
 
-		public void Setup() {
-			texture = new Texture2D(width, 1, TextureFormat.RGBAFloat, false);
-			texture.filterMode = FilterMode.Bilinear;
-			texture.wrapMode = TextureWrapMode.Clamp;
-			
-			Update();
-		}
-
-		public void Update() {
-			if (!texture) Setup();
-
-			Color [] tempArray = new Color[width];
+			Color [] tempArray = new Color[Width];
 			for (int i = 0; i < 1024; i++) {
-				float time = (float)i/(float)width;
+				float time = (float)i/(float)Width;
 				tempArray[i] = Gradient.Evaluate(time);
 			}
-			texture.SetPixels(tempArray);
-			texture.Apply();
+			
+			Texture.SetPixels(tempArray);
+			Texture.Apply();
 		}
 
 	}

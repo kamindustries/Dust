@@ -2,6 +2,7 @@
 
 #define PI 3.14159265359
 #define IDENTITY4x4 float4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+#define SMALLFLOAT 1e-6
 #define SMALLFLOAT3 float3(1e-6,0,0)
 // --------------------------------------------------
 // Structures
@@ -100,4 +101,40 @@ float4x4 rotateToVector(float3 dir)
                             0,      0,      0,  1 );
 
 	return mul(maty, matz);
+}
+
+float4x4 rotationAroundX(float amount) 
+{
+    return float4x4(1, 0,           0,              0,
+                    0, cos(amount), sin(amount),    0,
+                    0, -sin(amount), cos(amount),   0,
+                    0,           0, 0,              1);
+}
+float4x4 rotationAroundY(float amount) 
+{
+    return float4x4(cos(amount), 0, -sin(amount),   0,
+                    0,           1, 0,              0,
+                    sin(amount), 0, cos(amount),    0,
+                    0,           0, 0,              1);
+}
+float4x4 rotationAroundZ(float amount) 
+{
+    return float4x4(cos(amount),    sin(amount), 0, 0,
+                    -sin(amount),   cos(amount), 0, 0,
+                    0,              0,           1, 0,
+                    0,              0,           0, 1);
+}
+
+float4x4 rotateXYZ(float4x4 rotMatrix, float3 amount) 
+{
+    if (amount.x != 0.0) {
+		rotMatrix = mul(rotMatrix, rotationAroundX(amount.x));
+	}
+	if (amount.y != 0.0) {
+		rotMatrix = mul(rotMatrix, rotationAroundY(amount.y));
+	}
+	if (amount.z != 0.0) {
+		rotMatrix = mul(rotMatrix, rotationAroundZ(amount.z));
+	}
+    return rotMatrix;
 }

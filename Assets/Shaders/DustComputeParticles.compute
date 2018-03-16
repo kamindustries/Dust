@@ -8,8 +8,9 @@
 #define thread_group_size_x 16
 #define thread_group_size_y 16
 
-Texture2D<float4> _colorByLife;
-Texture2D<float4> _colorByVelocity;
+Texture2D<float> _sizeOverLife;
+Texture2D<float4> _colorOverLife;
+Texture2D<float4> _colorOverVelocity;
 RWStructuredBuffer<DustMesh> _emissionMesh;
 RWStructuredBuffer<int> _emissionMeshTris;
 RWStructuredBuffer<DustParticle> _particles;
@@ -17,7 +18,7 @@ RWStructuredBuffer<int> _kernelArgs;
 AppendStructuredBuffer<uint> _deadList;
 ConsumeStructuredBuffer<uint> _particlePool;
 
-SamplerState sampler_colorByLife;
+SamplerState sampler_colorOverLife;
 
 float dt;
 float fixedTime; //seconds
@@ -32,6 +33,8 @@ float3 gravityIn;
 float gravityModifier;
 float jitter;
 float randomizeDirection;
+float randomizeRotation;
+bool alignToInitialDirection;
 
 int emissionShape;
 int emission;
@@ -39,10 +42,14 @@ float initialSpeed;
 float3 emissionSize;
 float scatterVolume;
 
+bool sizeOverLifeToggle;
+
 bool alignToDirection;
-float rotationOverLifetime;
+float3 rotationOverLifetime;
 
 float4 startColor;
+bool colorOverLifeToggle;
+bool colorOverVelocityToggle;
 float velocityColorRange;
 float randomizeColor;
 bool useMeshEmitterColor;
@@ -86,11 +93,19 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 	float r7 = rand(float2(id.x+fixedTime+.5, id.y+fixedTime+.6));
 	float3 randSphere = randomSpherePoint(float3(r4,r5,r6), scatterVolume);
 
+	float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
+	p.age = newLifespan;
+
+	p.lifespan = newLifespan;
+	p.mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
+	p.momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
+
 	[call] switch(emissionShape) 
 	{
 		// Procedural sphere
 		case 0:
-			p.vel = randSphere * initialSpeed * dt;
+			p.vel = randSphere * initialSpeed * p.mass * dt;
+			
 			p.pos = origin.xyz + (randSphere * emissionSize);
 			p.pos += p.vel * r1 * jitter;
 
@@ -114,7 +129,7 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 			dir = normalize(mul(emissionMeshMatrixInvT, float4(dir, 1.)).xyz + float3(1e-6,0,0));
 			dir = lerp(dir, normalize(dir + randSphere), randomizeDirection);
 			dir += float3(1e-3,0,0); //guard against /0 later
-			p.vel = dir * initialSpeed * dt;
+			p.vel = dir * initialSpeed * p.mass * dt;
 
 			// Jitter
 			p.pos += dir * dt * r1 * jitter;
@@ -127,21 +142,26 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 			break;
 	}
 
+	// inherit velocity from parent
+	p.vel += initialVelocityDir * inheritVelocityMult *  dt;
+
 	p.startColor *= lerp(float4(1,1,1,1), float4(r5,r6,r7,1.), randomizeColor);
 
-	// Inherit velocity from parent rigidbody or transform
-	p.vel += initialVelocityDir * inheritVelocityMult * dt;
-
 	p.rot = IDENTITY4x4;
+	if (alignToInitialDirection) {
+		if (length(p.vel) > SMALLFLOAT) {
+			p.rot = rotateToVector(p.vel);
+		}
+	}
+	
+	if (randomizeRotation > 0.0) {
+		float3 dir = (float3(r1, r2, r3) * 2.) - 1.;
+		dir = lerp(float3(0,0,0), dir, randomizeRotation);
+		p.rot = rotateXYZ(p.rot, dir);
+	}
+	
 	p.scale = float3(1.,1.,1.);
 
-	float newLifespan = fit(rand(float2(id.x+.6, id.y)), 0., 1., lifespanNew.x, lifespanNew.y) * 2.; //*2 puts it into seconds
-	p.age = newLifespan;
-
-	p.lifespan = newLifespan;
-	p.mass = fit(rand(float2(id.x+.7, id.y)), 0., 1., massNew.x, massNew.y);
-	p.momentum = fit(rand(float2(id.x+.8, id.y)), 0., 1., momentumNew.x, momentumNew.y);
-	
 	_particles[idx] = p;
 
 }
@@ -182,20 +202,41 @@ void Update(uint3 id : SV_DispatchThreadID)
 		simplexNoise *= noiseAmplitude;
 	}
 	
+	float2 ageCoord = float2(fit(p.age, 0., p.lifespan, 1., 0.), 0.5);
+	
 	// Velocity
 	float3 gravity = gravityIn * gravityModifier * dt;
-	float3 velIn = simplexNoise + gravity;
-	p.vel = (velIn * p.mass * dt) + p.vel * p.momentum;
+	float3 velForces = simplexNoise + gravity;
+	p.vel = (velForces * p.mass * dt) + p.vel * p.momentum;
 	p.pos += p.vel;
 	
 	// Color
 	float speed = length(p.vel);
-	float2 coord = float2(fit(p.age, 0., p.lifespan, 1., 0.), 0.5);
-	float4 cdLife = _colorByLife.SampleLevel(sampler_colorByLife, coord, 0.0);
-	coord = float2(fit(clamp(speed, 0., velocityColorRange), 0., velocityColorRange, 0., 1.), 0.5);
-	float4 cdVel = _colorByVelocity.SampleLevel(sampler_colorByLife, coord, 0.0);
+	float4 cdLife = float4(1,1,1,1);
+	float4 cdVel = float4(1,1,1,1);
+	if (colorOverLifeToggle) {
+		cdLife = _colorOverLife.SampleLevel(sampler_colorOverLife, ageCoord, 0.0);
+	}
+	if (colorOverVelocityToggle) {
+		float2 velCoord = float2(fit(clamp(speed, 0., velocityColorRange), 0., velocityColorRange, 0., 1.), 0.5);
+		cdVel = _colorOverVelocity.SampleLevel(sampler_colorOverLife, velCoord, 0.0);
+	}
 	p.cd = p.startColor * cdLife * cdVel;
 
+	// Rotation and scale
+	if (alignToDirection) {
+		if (length(p.vel) > SMALLFLOAT) {
+			p.rot = rotateToVector(p.vel);
+		}
+	}
+
+	// Add rotation every step
+	p.rot = rotateXYZ(p.rot, rotationOverLifetime * dt);
+
+	if (sizeOverLifeToggle) {
+		p.scale = _sizeOverLife.SampleLevel(sampler_colorOverLife, ageCoord, 0.0).r;
+	}
+	
 	// Age
 	p.age -= dt;
 	if (p.age <= 0.0) {
@@ -203,12 +244,6 @@ void Update(uint3 id : SV_DispatchThreadID)
 		_deadList.Append(idx);
 	}
 
-
-	// Rotation and scale
-	// clean this up
-	if (alignToDirection) {
-		p.rot = rotateToVector(p.vel);
-	}
 
 	_particles[idx] = p;
 

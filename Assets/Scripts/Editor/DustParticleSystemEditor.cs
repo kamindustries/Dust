@@ -28,9 +28,14 @@ namespace Dust {
         SerializedProperty InitialSpeed;
         SerializedProperty Jitter;
         SerializedProperty RandomizeDirection;
+        SerializedProperty RandomizeRotation;
+        SerializedProperty AlignToInitialDirection;
         SerializedProperty EmissionSize;
 		SerializedProperty ScatterVolume;
         SerializedProperty EmissionMeshRenderer;
+
+		// Size
+		SerializedProperty SizeOverLife;
 
 		// Rotation
         SerializedProperty AlignToDirection;
@@ -38,8 +43,8 @@ namespace Dust {
 		
 		// Color
         SerializedProperty StartColor;
-        SerializedProperty ColorByLife;
-        SerializedProperty ColorByVelocity;
+        SerializedProperty ColorOverLife;
+        SerializedProperty ColorOverVelocity;
         SerializedProperty RandomizeColor;
         SerializedProperty UseMeshEmitterColor;
 
@@ -70,9 +75,14 @@ namespace Dust {
 			InitialSpeed = serializedObject.FindProperty("InitialSpeed");
 			Jitter = serializedObject.FindProperty("Jitter");
 			RandomizeDirection = serializedObject.FindProperty("RandomizeDirection");
+			RandomizeRotation = serializedObject.FindProperty("RandomizeRotation");
+			AlignToInitialDirection = serializedObject.FindProperty("AlignToInitialDirection");
 			EmissionSize = serializedObject.FindProperty("EmissionSize");
 			ScatterVolume = serializedObject.FindProperty("ScatterVolume");
 			EmissionMeshRenderer = serializedObject.FindProperty("EmissionMeshRenderer");
+
+			// Size
+			SizeOverLife = serializedObject.FindProperty("SizeOverLife");
 
 			// Rotation
 			AlignToDirection = serializedObject.FindProperty("AlignToDirection");
@@ -80,8 +90,8 @@ namespace Dust {
 
 			// Color
 			StartColor = serializedObject.FindProperty("StartColor");
-			ColorByLife = serializedObject.FindProperty("ColorByLife");
-			ColorByVelocity = serializedObject.FindProperty("ColorByVelocity");
+			ColorOverLife = serializedObject.FindProperty("ColorOverLife");
+			ColorOverVelocity = serializedObject.FindProperty("ColorOverVelocity");
 			RandomizeColor = serializedObject.FindProperty("RandomizeColor");
 			UseMeshEmitterColor = serializedObject.FindProperty("UseMeshEmitterColor");
 			
@@ -135,6 +145,15 @@ namespace Dust {
 			EditorGUILayout.PropertyField(InitialSpeed);
 			EditorGUILayout.PropertyField(Jitter);
 			EditorGUILayout.PropertyField(RandomizeDirection);
+			EditorGUILayout.PropertyField(RandomizeRotation);
+			EditorGUILayout.PropertyField(AlignToInitialDirection);
+
+			// Size
+			EditorGUI.BeginChangeCheck();
+				EditorGUILayout.PropertyField(SizeOverLife, true);
+			if (EditorGUI.EndChangeCheck()) {
+				src.SizeOverLife.Update();
+			}
 
 			// Rotation
 			EditorGUILayout.PropertyField(AlignToDirection);
@@ -144,11 +163,11 @@ namespace Dust {
 			EditorGUILayout.PropertyField(StartColor);
 			// Interactive gradient editor
 			EditorGUI.BeginChangeCheck();
-				EditorGUILayout.PropertyField(ColorByLife, true);
-				EditorGUILayout.PropertyField(ColorByVelocity, true);
+				EditorGUILayout.PropertyField(ColorOverLife, true);
+				EditorGUILayout.PropertyField(ColorOverVelocity, true);
 			if (EditorGUI.EndChangeCheck()) {
-				src.ColorByLife.Update();
-				src.ColorByVelocity.Update();
+				src.ColorOverLife.Update();
+				src.ColorOverVelocity.Update();
 			}
 			EditorGUILayout.PropertyField(RandomizeColor);
 			EditorGUILayout.PropertyField(UseMeshEmitterColor);

@@ -51,20 +51,26 @@ namespace Dust
         public float Jitter = 0f;
         [Range(0,1)]
         public float RandomizeDirection = 0f;
+        [Range(0,1)]
+        public float RandomizeRotation = 0f;
+        public bool AlignToInitialDirection = false;
         public Vector3 EmissionSize = new Vector3(1f,1f,1f);
         [Range(0,1)]
         public float ScatterVolume = 0f;
         public MeshRenderer EmissionMeshRenderer;
 
+        [Header("Size")]
+        public CurveRamp SizeOverLife;
+
         [Header("Rotation")]
         public bool AlignToDirection = false;
-        public float RotationOverLifetime = 0f;
+        public Vector3 RotationOverLifetime = new Vector3(0,0,0);
 
         [Header("Color")]
         [ColorUsageAttribute(true,true,0,8,.125f,3)]
         public Color StartColor = new Color(1f,1f,1f,1f);
-        public ColorRamp ColorByLife;
-        public ColorRampRange ColorByVelocity;
+        public ColorRamp ColorOverLife;
+        public ColorRampRange ColorOverVelocity;
         [Range(0,1)]
         public float RandomizeColor = 0f;
         public bool UseMeshEmitterColor = false;
@@ -183,11 +189,13 @@ namespace Dust
             Compute.SetBuffer(m_kernelSpawn, "_particles", m_particlesBuffer);
             Compute.SetBuffer(m_kernelUpdate, "_particles", m_particlesBuffer);
 
-            // Create color ramp textures
-            ColorByLife.Setup();
-            ColorByVelocity.Setup();
-            Compute.SetTexture(m_kernelUpdate, "_colorByLife", (Texture)ColorByLife.Texture);
-            Compute.SetTexture(m_kernelUpdate, "_colorByVelocity", (Texture)ColorByVelocity.Texture);
+            // Create ramp textures
+            SizeOverLife.Setup();
+            ColorOverLife.Setup();
+            ColorOverVelocity.Setup();
+            Compute.SetTexture(m_kernelUpdate, "_sizeOverLife", (Texture)SizeOverLife.Texture);
+            Compute.SetTexture(m_kernelUpdate, "_colorOverLife", (Texture)ColorOverLife.Texture);
+            Compute.SetTexture(m_kernelUpdate, "_colorOverVelocity", (Texture)ColorOverVelocity.Texture);
 
             // Set up mesh emitter
             if (EmissionMeshRenderer != null) {
@@ -286,20 +294,26 @@ namespace Dust
             Compute.SetVector("initialVelocityDir", m_initialVelocityDir);
             Compute.SetVector("gravityIn", Physics.gravity);
             Compute.SetFloat("gravityModifier", GravityModifier);
-            Compute.SetFloat("jitter", Jitter);
 			// Shape
-            Compute.SetFloat("randomizeDirection", RandomizeDirection);
             Compute.SetInt("emissionShape", Shape);
             Compute.SetInt("emission", Emission);
             Compute.SetVector("emissionSize", EmissionSize);
-            Compute.SetFloat("initialSpeed", InitialSpeed);
             Compute.SetFloat("scatterVolume", ScatterVolume);
+            Compute.SetFloat("initialSpeed", InitialSpeed);
+            Compute.SetFloat("jitter", Jitter);
+            Compute.SetFloat("randomizeDirection", RandomizeDirection);
+            Compute.SetFloat("randomizeRotation", RandomizeRotation);
+            Compute.SetBool("alignToInitialDirection", AlignToInitialDirection);
+            // Size
+            Compute.SetBool("sizeOverLifeToggle", SizeOverLife.Enable);
 			// Rotation
             Compute.SetBool("alignToDirection", AlignToDirection);
-            Compute.SetFloat("rotationOverLifetime", RotationOverLifetime);
+            Compute.SetVector("rotationOverLifetime", RotationOverLifetime);
 			// Color
             Compute.SetVector("startColor", StartColor);
-            Compute.SetFloat("velocityColorRange", ColorByVelocity.Range);
+            Compute.SetBool("colorOverLifeToggle", ColorOverLife.Enable);
+            Compute.SetBool("colorOverVelocityToggle", ColorOverVelocity.Enable);
+            Compute.SetFloat("velocityColorRange", ColorOverVelocity.Range);
             Compute.SetFloat("randomizeColor", RandomizeColor);
             Compute.SetBool("useMeshEmitterColor", UseMeshEmitterColor);
 			// Noise

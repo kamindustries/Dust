@@ -331,13 +331,24 @@ MonoBehaviour:
   InitialSpeed: 0
   Jitter: 0
   RandomizeDirection: 0
-  EmissionSize: {x: 5, y: 5, z: 5}
+  RandomizeRotation: 0
+  AlignToInitialDirection: 1
+  EmissionSize: {x: 2, y: 2, z: 2}
   ScatterVolume: 0
   EmissionMeshRenderer: {fileID: 0}
+  SizeOverLife:
+    Enable: 0
+    Curve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   AlignToDirection: 0
-  RotationOverLifetime: 0
+  RotationOverLifetime: {x: 0.1, y: 0.1, z: 0.1}
   StartColor: {r: 1, g: 1, b: 1, a: 1}
-  ColorByLife:
+  ColorOverLife:
+    Enable: 0
     Gradient:
       serializedVersion: 2
       key0: {r: 1, g: 1, b: 1, a: 1}
@@ -367,7 +378,8 @@ MonoBehaviour:
       m_Mode: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
-  ColorByVelocity:
+  ColorOverVelocity:
+    Enable: 0
     Gradient:
       serializedVersion: 2
       key0: {r: 1, g: 1, b: 1, a: 1}
