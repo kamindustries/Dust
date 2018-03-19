@@ -74,6 +74,7 @@ namespace Dust
             m_args[0] = (mesh != null) ? (uint)mesh.GetIndexCount(0) : 0;
             m_args[1] = m_instanceCount;
             argsBuffer.SetData(m_args);
+            Debug.Log("m_args[0]: " + m_args[0]);
         }
 
         public override void Draw() 
