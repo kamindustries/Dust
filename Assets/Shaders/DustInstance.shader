@@ -17,7 +17,6 @@ Shader "Dust/Instanced"
 			CGPROGRAM
 			// Physically based Standard lighting model
 			#pragma surface surf Standard vertex:vert addshadow fullforwardshadows
-			#pragma surface surf Standard  addshadow fullforwardshadows
 			#pragma multi_compile_instancing
 			#pragma instancing_options procedural:setup
 			#pragma target 5.0
