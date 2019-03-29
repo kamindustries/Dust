@@ -17,7 +17,7 @@ Shader "Dust/Instanced"
 			CGPROGRAM
 			// Physically based Standard lighting model
 			#pragma surface surf Standard vertex:vert addshadow fullforwardshadows
-			#pragma surface surf Standard  addshadow fullforwardshadows
+			// #pragma surface surf Standard  addshadow fullforwardshadows
 			#pragma multi_compile_instancing
 			#pragma instancing_options procedural:setup
 			#pragma target 5.0
@@ -26,6 +26,7 @@ Shader "Dust/Instanced"
 			struct Input 
 			{
 				float2 uv_MainTex;
+				float3 normal;
 			};
 
 			fixed4 _Color;
@@ -40,13 +41,16 @@ Shader "Dust/Instanced"
 				StructuredBuffer<DustParticle> dataBuffer;
 			#endif
 				
-			void vert (inout appdata_full v)
+			void vert (inout appdata_full v, out Input o)
 			{
+			UNITY_INITIALIZE_OUTPUT(Input,o);
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 				uint id = unity_InstanceID;
 				float4 pos = float4(v.vertex.xyz * dataBuffer[id].scale, 1.);
-				v.vertex.xyz = mul(dataBuffer[id].rot, pos ).xyz;
-				v.normal = mul(dataBuffer[id].rot, float4(v.normal,1.)).xyz;
+				v.vertex.xyz = mul(dataBuffer[id].rot, pos).xyz;
+				v.normal = mul(dataBuffer[id].rot, float4(v.normal, 1.)).xyz;
+				o.normal = v.normal;
+
 			#endif
 			}
 
@@ -80,7 +84,7 @@ Shader "Dust/Instanced"
 				fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color * col;
 				o.Albedo = c.rgb;
 				o.Metallic = _Metallic;
-				o.Normal = UnpackNormal (tex2D (_BumpMap, IN.uv_MainTex) );
+				// o.Normal = UnpackNormal (tex2D (_BumpMap, IN.uv_MainTex) );
 				o.Smoothness = _Glossiness;
 				o.Alpha = c.a;
 			}

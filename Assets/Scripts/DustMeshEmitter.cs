@@ -58,7 +58,7 @@ namespace Dust
                     emissionMeshTemp[(i*numAttribs)+2].z = m_mesh.colors[i].b;
                 }
             }
-
+            
             for (int i = 0; i < m_meshTrisCount; i++) {
                 emissionMeshTrisTemp[i] = m_mesh.triangles[i];
             }

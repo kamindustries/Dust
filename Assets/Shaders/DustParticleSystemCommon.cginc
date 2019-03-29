@@ -21,7 +21,7 @@ struct DustParticle
     float momentum;
     float3 scale;
     float4x4 rot;
-    bool active;
+    int active;
 };
 
 struct DustMesh
@@ -77,8 +77,10 @@ float3 bayesianCoordinate(float3 a, float3 b, float3 c, float2 random) {
 
 
 
-float4x4 rotateToVector(float3 dir) 
+float4x4 rotateToVector(float3 direction) 
 {
+    float3 dir = direction;
+    dir += 1e-6;
     float3 axis = normalize(dir);
 	axis.z *= -1.;
 	

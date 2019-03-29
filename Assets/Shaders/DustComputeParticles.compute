@@ -72,7 +72,7 @@ const float cellSize = 1.25;
 void Init(uint3 id : SV_DispatchThreadID)
 {
 	int idx = id.x + id.y * thread_group_size_x * _kernelArgs[0];
-    _particles[idx].active = false;
+    _particles[idx].active = 0;
     _deadList.Append(idx);
 }
 
@@ -81,7 +81,7 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 {
 	uint idx = _particlePool.Consume();
 	DustParticle p = _particles[idx];
-	p.active = true;
+	p.active = 1;
 
 	// Randomness
 	float r1 = rand(float2(id.x+.1, id.y));
@@ -122,7 +122,7 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 			float3 a = _emissionMesh[tris.x].pos;
 			float3 b = _emissionMesh[tris.y].pos;
 			float3 c = _emissionMesh[tris.z].pos;
-			p.pos = bayesianCoordinate(a, b, c, float2(r1,r2));
+			p.pos = bayesianCoordinate(a, b, c, float2(r5,r6));
 			
 			// Velocity direction is the first vertex in the triangle...lazy
 			float3 dir = _emissionMesh[tris.x].normal;
@@ -143,7 +143,8 @@ void Spawn(uint3 id : SV_DispatchThreadID)
 	}
 
 	// inherit velocity from parent
-	p.vel += initialVelocityDir * inheritVelocityMult *  dt;
+	float velDirMag = length(initialVelocityDir);
+	p.vel += (velDirMag < 1e-6) ? 0.0 : initialVelocityDir * inheritVelocityMult *  dt;
 
 	p.startColor *= lerp(float4(1,1,1,1), float4(r5,r6,r7,1.), randomizeColor);
 
@@ -220,7 +221,9 @@ void Update(uint3 id : SV_DispatchThreadID)
 			p.rot = rotateToVector(p.vel);
 		}
 	}
-	p.rot = rotateXYZ(p.rot, rotationOverLifetime * dt);
+	// p.rot = rotateXYZ(p.rot, rotationOverLifetime * dt);
+	p.rot = rotateXYZ(p.rot, p.vel * rotationOverLifetime);
+
 
 	// Scale
 	if (sizeOverLifeToggle) {
@@ -230,7 +233,7 @@ void Update(uint3 id : SV_DispatchThreadID)
 	// Age
 	p.age -= dt;
 	if (p.age <= 0.0) {
-		p.active = false;
+		p.active = 0;
 		_deadList.Append(idx);
 	}
 

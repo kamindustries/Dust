@@ -52,7 +52,7 @@ Shader "Dust/Pointcloud"
 				o.baseCd = dataBuffer[id].cd;
 
 				o.metadata = fixed3(0,0,0);
-				if (id >= uint(numParticles) || !dataBuffer[id].active) o.metadata.r = 1;
+				if (id >= uint(numParticles) || dataBuffer[id].active < 1) o.metadata.r = 1;
 				return o;
 			}
 
@@ -96,7 +96,7 @@ Shader "Dust/Pointcloud"
 				float3 worldPos = dataBuffer[id].pos;
 				o.pos = mul(UNITY_MATRIX_VP, float4(worldPos,1.0f));
 				o.metadata = fixed3(0,0,0);
-				if (id >= uint(numParticles) || !dataBuffer[id].active) o.metadata.r = 1;
+				if (id >= uint(numParticles) || dataBuffer[id].active < 1) o.metadata.r = 1;
 				return o;
 			}
 

@@ -11,19 +11,30 @@ using System.Runtime.InteropServices;
 namespace Dust 
 {
     // Particle system buffer
-    struct DustParticle
+    [StructLayout(LayoutKind.Explicit)]
+    public struct DustParticle
     {
-        Vector3 pos;
-        Vector3 vel;
-        Color cd;
-        Color startColor;
-        float age;
-        float lifespan;
-        float mass;
-        float momentum;
-        Vector3 scale;
-        Matrix4x4 rot;
-        bool active;
+        [FieldOffset(0)] Vector3 pos;
+        
+        [FieldOffset(12)] Vector3 vel;
+
+        [FieldOffset(24)] Color cd;
+
+        [FieldOffset(40)] Color startColor;
+        
+        [FieldOffset(56)] float age;
+        
+        [FieldOffset(60)] float lifespan;
+        
+        [FieldOffset(64)] float mass;
+        
+        [FieldOffset(68)] float momentum;
+        
+        [FieldOffset(72)] Vector3 scale;
+        
+        [FieldOffset(84)] Matrix4x4 rot;
+        
+        [FieldOffset(148)] int active;
     };
 
     public class DustParticleSystem : MonoBehaviour
@@ -124,6 +135,7 @@ namespace Dust
 
             m_kernelSpawn = m_compute.FindKernel("Spawn");
             m_kernelUpdate = m_compute.FindKernel("Update");
+            m_prevPos = transform.position;
 
             CreateBuffers();
             UpdateComputeUniforms();
@@ -257,9 +269,6 @@ namespace Dust
 
         private void UpdateComputeUniforms() 
         {
-            // Update internal variables
-            m_prevPos = transform.position;
-
             // Follow mouse cursor
             if (Input.GetMouseButton(0)){
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -285,7 +294,9 @@ namespace Dust
                     break;
             }
 
+            // Update internal variables
             m_origin = transform.position;
+            m_prevPos = m_origin;
 
             m_compute.SetFloat("dt", Time.fixedDeltaTime);
             m_compute.SetFloat("fixedTime", Time.time);
